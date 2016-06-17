@@ -6,6 +6,7 @@ from OpenGL.GLU import *
 import numpy as np
 import itertools
 
+DEBUG = False
 
 COLORS = {
     'black': (0.0,0.0,0.0),
@@ -38,7 +39,8 @@ def bell(blocking=False):
             pygame.time.delay(100)
 
 class UserEscape(Exception):
-    pass
+    def __init__(self, msg = "User stopped the sequence"):
+        Exception.__init__(self, msg)
 
 class Quad:
     def __init__(self, lt, lb, rb, rt, color = COLORS['white']):
@@ -173,11 +175,14 @@ class Screen:
         w,h = display_mode
         self.screen_width  = w
         self.screen_height = h
+        fullscreen_flag_value = pygame.FULLSCREEN
+        if DEBUG:  #do in window while debugging
+            fullscreen_flag_value = 0
         self.display_surface = pygame.display.set_mode(display_mode,
                                                        pygame.OPENGL 
                                                        | pygame.DOUBLEBUF
                                                        | pygame.HWSURFACE
-                                                       | pygame.FULLSCREEN
+                                                       | fullscreen_flag_value 
                                                       )
         #configure the display perspective
         # Fill the entire graphics window!
@@ -221,7 +226,8 @@ class Screen:
     def run(self, 
             duration = 5,
             vsync_value = 0,
-            wait_on_user_keypress = False
+            wait_on_user_escape = False,
+            mask_user_escape = False,
            ):
         duration *= 1e3 #convert to milliseconds
         
@@ -246,27 +252,50 @@ class Screen:
             #show the scene
             pygame.display.flip()
             #handle outstanding events
-            is_running = self.handle_events()
+            is_running = self.handle_events(mask_user_escape = mask_user_escape)
             dt = self.clock.tick_busy_loop(self.render_loop_rate) #more accurate than tick, but uses more CPU resources
             t  = pygame.time.get_ticks()
             if t - t0 > duration:
                 is_running = False
         #now wait until the user presses escape
-        if wait_on_user_keypress:
+        if wait_on_user_escape:
             is_waiting = True
-            while is_waiting:
-                is_waiting = self.handle_events()
+            try:
+                while is_waiting:
+                    is_waiting = self.handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
+            except UserEscape as exc:
+                pass
         
-    def handle_events(self):
+    def handle_events(self, mask_user_escape = False):
         for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return False
-                elif event.type == KEYDOWN:
-                    if event.key == K_ESCAPE:
-                        raise UserEscape
-                    else:
-                        return True
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == KEYDOWN:
+                if (event.key == K_ESCAPE) and (not mask_user_escape):
+                    raise UserEscape
         return True
+
+def run_start_sequence(fixation_cross = None):
+    if fixation_cross is None:
+        fixation_cross = FixationCross()
+    #instantiate screens
+    black_SCR = Screen(color = "black",fixation_cross = fixation_cross)
+    green_SCR = Screen(color = "green",fixation_cross = fixation_cross)
+    #run sequence
+    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    green_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)  #begins the start frame
+    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    black_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
+    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+        
+def run_stop_sequence(fixation_cross = None):
+    #instantiate screens
+    black_SCR = Screen(color = "black", fixation_cross = fixation_cross)
+    red_SCR = Screen(color = "red", fixation_cross = fixation_cross)
+    #run sequence
+    black_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
+    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    red_SCR.run(duration = 1, vsync_value = 5, wait_on_user_escape = True)
 
 class CheckerBoard:
     def __init__(self, nrows, width = 1.0, height = None, color1 = COLORS['white'], color2 = COLORS['black']):
