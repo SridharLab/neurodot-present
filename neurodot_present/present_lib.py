@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 import pygame, sys
 from pygame.locals import *
 from OpenGL.GL import *
@@ -14,6 +13,7 @@ COLORS = {
     'green': (0.0,1.0,0.0),
     'blue' : (0.0,0.0,1.0),
     'white': (1.0,1.0,1.0),
+    'gray' : (0.75,0.75,0.75)
 }
 
 SCREEN_LT = np.array((-1.0, 1.0))
@@ -31,7 +31,7 @@ DEFAULT_FLASH_RATE = 17 #Hz
 
 def bell(blocking=False):
     pygame.mixer.init()
-    bell_sound = pygame.mixer.Sound('bell.wav')
+    bell_sound = pygame.mixer.Sound('resources/bell.wav')
     ch = bell_sound.play()
     if blocking:
         while ch.get_busy():
@@ -371,7 +371,7 @@ class TextDisplay(Screen):
                  **kwargs
                  ):
         Screen.__init__(self,
-                        color = "black",
+                        color = "white",
                         display_mode = display_mode,
                         constrain_aspect = constrain_aspect,
                         vsync_patch_width  = vsync_patch_width,
@@ -381,20 +381,20 @@ class TextDisplay(Screen):
 
     def setup_textDisplay(self,
                            text_content = "NO TEXT SPECIFIED",
-                           text_color = [0, 0, 0],
+                           text_color = 'black',
                            text_bgColor = None,
                            font_size = 288,
                            font_type = None,
-                           screen_bgColor = [255, 255, 255],
+                           screen_bgColor = 'white',
                            ):
         #if text_bgColor is unspecified, set to same as background color (renders faster than using alpha)
         if text_bgColor == None:
             text_bgColor = screen_bgColor
 
-        self.screen_bgColor = screen_bgColor
+        self.screen_bgColor = COLORS[screen_bgColor]
         self.text_content = text_content
-        self.text_color = text_color
-        self.text_bgColor = text_bgColor
+        self.text_color = COLORS[text_color]
+        self.text_bgColor = COLORS[text_bgColor]
         self.font_size = font_size
         self.font_type = font_type
 
@@ -408,23 +408,29 @@ class TextDisplay(Screen):
         is_running = True
 
         #render textSurface from text_content
-        self.textSurface = self.font.render(text_content, 1, self.text_color, self.text_bgColor)
+        self.textSurface = self.font.render(text_content, 1, \
+            [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
+            [int(self.text_bgColor[0]*255), int(self.text_bgColor[0]*255), int(self.text_bgColor[2]*255)])
 
         #Scaling font; attempting to render text that is too wide/tall sets the raster position off screen and nothing is rendered
         if self.textSurface.get_width() > self.screen_width:
             percent_scale = float(self.screen_width) / self.textSurface.get_width()
             self.font = pygame.font.Font(self.font_type, int(self.font_size * percent_scale))
-            self.textSurface = self.font.render(text_content, 1, self.text_color, self.text_bgColor)
+            self.textSurface = self.font.render(text_content, 1, \
+                [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
+                [int(self.text_bgColor[0]*255), int(self.text_bgColor[0]*255), int(self.text_bgColor[2]*255)])
             print "Text is too wide for screen; scaling to fit"
 
         if self.textSurface.get_height() > self.screen_height:
             percent_scale = float(self.screen_height) / self.textSurface.get_height()
             self.font = pygame.font.Font(self.font_type, int(self.font_size * percent_scale))
-            self.textSurface = self.font.render(text_content, 1, self.text_color, self.text_bgColor)
+            self.textSurface = self.font.render(text_content, 1, \
+                [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
+                [int(self.text_bgColor[0]*255), int(self.text_bgColor[0]*255), int(self.text_bgColor[2]*255)])
             print "Text is too tall for screen; scaling to fit"
 
         #set background color
-        glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 0)
+        glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
         #prepare some values for rendering centered text
         centerOffset_pixels = [-self.textSurface.get_width()/2, -self.textSurface.get_height()/2]

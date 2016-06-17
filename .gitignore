@@ -1,0 +1,5 @@
+#OSX Junk
+*.DS_Store
+
+#.pyc files (I hope it's okay to igore these)
+*.pyc
