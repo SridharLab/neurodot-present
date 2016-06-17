@@ -13,7 +13,7 @@ def code_hebrew(latin_string):
     cypher = dict(zip(latin_alphabet, hebrew_alphabet))
     cypher[" "] = " "
 
-    latin_list = list(latin_string)
+    latin_list = list(latin_string.upper())
     coded_string = ""
     i = 0
     for char in latin_list:
@@ -24,6 +24,7 @@ def code_hebrew(latin_string):
 
 def main():
     pygame.init()
+    arial_heightScaleFactor = 1.0487012987  # the height of ArialHebrew characters differ from Arial chars by this factor
     num_trials = 2
     wordsPerTrial = 4  # latin words displayed per trial
     
@@ -42,7 +43,7 @@ def main():
     blankScreen = Screen(color = "white")
     restScreen = Screen(color = "black")
     latin_text = TextDisplay(font_type = "resources/Arial.ttf", font_size = 288, screen_bgColor = "white")
-    hebrew_text = TextDisplay(font_type = "resources/ArialHebrew.ttf", font_size = 288, screen_bgColor = "white")
+    hebrew_text = TextDisplay(font_type = "resources/ArialHebrew.ttf", font_size = int(288 * arial_heightScaleFactor), screen_bgColor = "white")
     
     try:
         #start sequence  

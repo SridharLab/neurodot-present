@@ -380,7 +380,7 @@ class TextDisplay(Screen):
         self.setup_textDisplay(**kwargs) #setup TextDisplay instance with kwargs or default parameters
 
     def setup_textDisplay(self,
-                           text_content = "NO TEXT SPECIFIED",
+                           text_content = "DEFAULT",
                            text_color = 'black',
                            text_bgColor = None,
                            font_size = 288,
@@ -398,36 +398,54 @@ class TextDisplay(Screen):
         self.font_size = font_size
         self.font_type = font_type
 
-        self.font = pygame.font.Font(font_type, font_size)
+        self.textSurface = self.render_surface(self.text_content, self.font_size)
 
-    def run(self, text_content = "NO TEXT SPECIFIED", duration = 5, vsync_value = 1):
+    def render_surface(self, text_content, font_size):
+
+        #render textSurface from text_content
+        self.font = pygame.font.Font(self.font_type, font_size)
+        self.textSurface = self.font.render(text_content, 1, \
+            [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
+            [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
+
+        #Scaling font; attempting to render text that is too wide/tall sets the raster position off screen and nothing is rendered
+        if self.textSurface.get_width() > self.screen_width:
+            percent_scale = float(self.screen_width) / self.textSurface.get_width()
+            self.font = pygame.font.Font(self.font_type, int(font_size * percent_scale))
+            self.textSurface = self.font.render(text_content, 1, \
+                [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
+                [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
+            print "'", text_content, "' is too wide for screen; scaling to fit"
+
+        if self.textSurface.get_height() > self.screen_height:
+            percent_scale = float(self.screen_height) / self.textSurface.get_height()
+            self.font = pygame.font.Font(self.font_type, int(font_size * percent_scale))
+            self.textSurface = self.font.render(text_content, 1, \
+                [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
+                [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
+            print "'", text_content, "' is too tall for screen; scaling to fit"
+
+        return self.textSurface
+
+    def run(self, text_content = None, duration = 5, vsync_value = 0, scale_refObj = None):
+        if not text_content is None:
+            self.text_content = text_content
+
         duration *= 1e3 #convert to milliseconds    
      
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
         is_running = True
 
-        #render textSurface from text_content
-        self.textSurface = self.font.render(text_content, 1, \
-            [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
-            [int(self.text_bgColor[0]*255), int(self.text_bgColor[0]*255), int(self.text_bgColor[2]*255)])
+        #render textSurface
+        self.textSurface = self.render_surface(self.text_content, self.font_size)
 
-        #Scaling font; attempting to render text that is too wide/tall sets the raster position off screen and nothing is rendered
-        if self.textSurface.get_width() > self.screen_width:
-            percent_scale = float(self.screen_width) / self.textSurface.get_width()
-            self.font = pygame.font.Font(self.font_type, int(self.font_size * percent_scale))
-            self.textSurface = self.font.render(text_content, 1, \
-                [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
-                [int(self.text_bgColor[0]*255), int(self.text_bgColor[0]*255), int(self.text_bgColor[2]*255)])
-            print "Text is too wide for screen; scaling to fit"
-
-        if self.textSurface.get_height() > self.screen_height:
-            percent_scale = float(self.screen_height) / self.textSurface.get_height()
-            self.font = pygame.font.Font(self.font_type, int(self.font_size * percent_scale))
-            self.textSurface = self.font.render(text_content, 1, \
-                [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
-                [int(self.text_bgColor[0]*255), int(self.text_bgColor[0]*255), int(self.text_bgColor[2]*255)])
-            print "Text is too tall for screen; scaling to fit"
+        # check if we are scaling size to match other TextDisplay obj's last run() and scale textSurface if needed
+        if not scale_refObj is None:
+            ref_surface = scale_refObj.render_surface(scale_refObj.text_content, scale_refObj.font_size)
+            width_scale = float(ref_surface.get_width()) / float(self.textSurface.get_width())
+            height_scale = float(ref_surface.get_height()) / float(self.textSurface.get_height())
+            self.textSurface = pygame.transform.scale(self.textSurface, (int(width_scale * self.textSurface.get_width()), int(height_scale * self.textSurface.get_height())))
 
         #set background color
         glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
