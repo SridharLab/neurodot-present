@@ -23,6 +23,8 @@ if __name__ == "__main__":
     
     FC = FixationCross()
     
+    CBFs
+    
     try:
         #start sequence
         run_start_sequence()
