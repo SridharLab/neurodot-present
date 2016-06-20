@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import pygame, sys
+import pygame, sys, os
 import random
-from present_lib import Screen, FixationCross, TextDisplay, UserEscape, bell, run_start_sequence, run_stop_sequence
+from neurodot_present.present_lib import Screen, FixationCross, TextDisplay, UserEscape, bell, run_start_sequence, run_stop_sequence
+import neurodot_present.resources
 
 # encodes a latin string in a randomly generated hebrew cypher
 def code_hebrew(latin_string):
@@ -24,20 +25,30 @@ def code_hebrew(latin_string):
 
 def main():
     arial_heightScaleFactor = 1.0487012987  # the height of ArialHebrew characters differ from Arial chars by this factor
-    num_blocks = 2
+    num_blocks    = 26     #up to 256/wordsPerBlock for unique words, e.g. 32 for 8 word per block
     wordsPerBlock = 8  # words displayed per block
 
     pygame.init()
+    pygame.mouse.set_visible(False)
 
     #instantiate some objects
     FC = FixationCross(color = "black")
-    words_displayed = open("data/words_displayed.txt", "w")
+    if not os.path.isdir("data"):
+        os.mkdir("data")
+    num = 0
+    while True:
+        fn = "data/words_displayed_%02d.txt" % num
+        if not os.path.isfile(fn):
+            break
+        num += 1
+            
+    words_displayed = open(fn, "w")
     restScreen = Screen(color = "white", fixation_cross = FC)
     blankScreen = Screen(color = "white")
 
     # get and randomize a list of latin words from the word_list.txt file
     word_list = []
-    with open("resources/word_list.txt") as list_file:
+    with neurodot_present.resources.load_wordlist() as list_file:
         for line in list_file.readlines():
             word_list.append(line.rstrip().upper())
     random.shuffle(word_list)
@@ -45,10 +56,18 @@ def main():
     # get list of TextDisplay objects to be displayed and randomize order
     text_objs = []
     for word in word_list[0:num_blocks*wordsPerBlock+1]:
-        latin_text = TextDisplay(text_content = word, vsync_value = 1, font_type = "resources/Arial.ttf", \
-                                 font_size = 288, screen_bgColor = "white")
-        hebrew_text = TextDisplay(text_content = code_hebrew(word), vsync_value = 2, font_type = "resources/ArialHebrew.ttf", \
-                                  font_size = int(288 * arial_heightScaleFactor), screen_bgColor = "white")
+        latin_text = TextDisplay(text_content = word,
+                                 vsync_value = 1,
+                                 font_type = "Arial.ttf",
+                                 font_size = 288,
+                                 screen_bgColor = "white"
+                                )
+        hebrew_text = TextDisplay(text_content = code_hebrew(word),
+                                  vsync_value = 2,
+                                  font_type = "ArialHebrew.ttf",
+                                  font_size = int(288 * arial_heightScaleFactor),
+                                  screen_bgColor = "white"
+                                 )
         text_objs.append(latin_text)
         text_objs.append(hebrew_text)
     random.shuffle(text_objs)
