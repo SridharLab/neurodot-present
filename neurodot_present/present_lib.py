@@ -9,12 +9,15 @@ import itertools
 DEBUG = False
 
 COLORS = {
-    'black': (0.0,0.0,0.0),
-    'red'  : (1.0,0.0,0.0),
-    'green': (0.0,1.0,0.0),
-    'blue' : (0.0,0.0,1.0),
-    'white': (1.0,1.0,1.0),
-    'gray' : (0.75,0.75,0.75)
+    'black'   : (0.0,0.0,0.0),
+    'red'     : (1.0,0.0,0.0),
+    'green'   : (0.0,1.0,0.0),
+    'blue'    : (0.0,0.0,1.0),
+    'cyan'    : (0.0,1.0,1.0),
+    'magenta' : (1.0,0.0,1.0),
+    'yellow'  : (1.0,1.0,0.0),
+    'white'   : (1.0,1.0,1.0),
+    'gray'    : (0.75,0.75,0.75)
 }
 
 SCREEN_LT = np.array((-1.0, 1.0))
@@ -346,6 +349,7 @@ class CheckerBoardFlasher(Screen):
                            width = None,
                            color1 = 'white',
                            color2 = 'black',
+                           vsync_value = None
                            ):
         #run colors through filter to catch names and convert to RGB
         color1 = COLORS.get(color1, color1)
@@ -356,14 +360,19 @@ class CheckerBoardFlasher(Screen):
         self.nrows = nrows
         self.CB1 = CheckerBoard(nrows,width, color1 = color1, color2 = color2)
         self.CB2 = CheckerBoard(nrows,width, color1 = color2, color2 = color1) #reversed pattern
+        self.vsync_value = vsync_value
     
-    def run(self, duration = 5, vsync_value = 1):
+    def run(self, duration = 5, vsync_value = None):
         duration *= 1e3 #convert to milliseconds
         
         #white/black alterning for intermediate signals
         CB_cycle = itertools.cycle((self.CB1,self.CB2))
-        VP_color_cycle = itertools.cycle((COLORS['white'],COLORS['black']))
-     
+
+        if vsync_value is None and not self.vsync_value is None:
+            vsync_value = self.vsync_value
+        elif vsync_value is None:
+            vsync_value = 1
+
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
         CB = CB_cycle.next()
