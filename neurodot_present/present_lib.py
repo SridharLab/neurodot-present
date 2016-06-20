@@ -6,6 +6,8 @@ from OpenGL.GLU import *
 import numpy as np
 import itertools
 
+import resources
+
 DEBUG = False
 
 COLORS = {
@@ -443,7 +445,8 @@ class TextDisplay(Screen):
     def render_surface(self, text_content, font_size):
 
         #render textSurface from text_content
-        self.font = pygame.font.Font(self.font_type, font_size)
+        font_path = resources.get_fontpath(self.font_type)
+        self.font = pygame.font.Font(font_path, font_size)
         self.textSurface = self.font.render(text_content, 1, \
             [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
             [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
@@ -451,7 +454,7 @@ class TextDisplay(Screen):
         #Scaling font; attempting to render text that is too wide/tall sets the raster position off screen and nothing is rendered
         if self.textSurface.get_width() > self.screen_width:
             percent_scale = float(self.screen_width) / self.textSurface.get_width()
-            self.font = pygame.font.Font(self.font_type, int(font_size * percent_scale))
+            self.font = pygame.font.Font(font_path, int(font_size * percent_scale))
             self.textSurface = self.font.render(text_content, 1, \
                 [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
                 [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
@@ -459,7 +462,7 @@ class TextDisplay(Screen):
 
         if self.textSurface.get_height() > self.screen_height:
             percent_scale = float(self.screen_height) / self.textSurface.get_height()
-            self.font = pygame.font.Font(self.font_type, int(font_size * percent_scale))
+            self.font = pygame.font.Font(font_path, int(font_size * percent_scale))
             self.textSurface = self.font.render(text_content, 1, \
                 [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
                 [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
