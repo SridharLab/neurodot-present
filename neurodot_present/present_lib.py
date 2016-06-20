@@ -263,7 +263,7 @@ class Screen:
             try:
                 while is_waiting:
                     is_waiting = self.handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
-            except UserEscape as exc:
+            except UserEscape:# as exc:
                 pass
         
     def handle_events(self, mask_user_escape = False):
@@ -295,7 +295,7 @@ def run_stop_sequence(fixation_cross = None):
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    red_SCR.run(duration = 1, vsync_value = 5, wait_on_user_escape = True)
+    red_SCR.run(duration = 0, vsync_value = 5, wait_on_user_escape = True)
 
 class CheckerBoard:
     def __init__(self, nrows, width = 1.0, height = None, color1 = COLORS['white'], color2 = COLORS['black']):
@@ -415,11 +415,13 @@ class TextDisplay(Screen):
                            font_size = 288,
                            font_type = None,
                            screen_bgColor = 'white',
+                           vsync_value = 0,
                            ):
         #if text_bgColor is unspecified, set to same as background color (renders faster than using alpha)
         if text_bgColor == None:
             text_bgColor = screen_bgColor
 
+        self.vsync_value = vsync_value
         self.screen_bgColor = COLORS[screen_bgColor]
         self.text_content = text_content
         self.text_color = COLORS[text_color]
@@ -456,9 +458,11 @@ class TextDisplay(Screen):
 
         return self.textSurface
 
-    def run(self, text_content = None, duration = 5, vsync_value = 0, scale_refObj = None):
+    def run(self, text_content = None, duration = 5, vsync_value = None, scale_refObj = None):
         if not text_content is None:
             self.text_content = text_content
+        if vsync_value is None:
+            vsync_value = self.vsync_value
 
         duration *= 1e3 #convert to milliseconds    
      

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pygame, sys
 import random
-from present_lib import Screen, FixationCross, TextDisplay, UserEscape, bell
+from present_lib import Screen, FixationCross, TextDisplay, UserEscape, bell, run_start_sequence, run_stop_sequence
 
 # encodes a latin string in a randomly generated hebrew cypher
 def code_hebrew(latin_string):
@@ -23,88 +23,73 @@ def code_hebrew(latin_string):
     return coded_string
 
 def main():
-    pygame.init()
     arial_heightScaleFactor = 1.0487012987  # the height of ArialHebrew characters differ from Arial chars by this factor
-    num_trials = 2
-    wordsPerTrial = 4  # latin words displayed per trial
-    
-    # get and randomize a list of 4-letter words from the word_list.txt file
-    word_list = []
-    with open("resources/word_list.txt") as list_file:
-        for line in list_file:
-            word_list.append(line.rstrip().upper())
-    random.shuffle(word_list)
-    
-    #instantiate objects
+    num_blocks = 2
+    wordsPerBlock = 8  # words displayed per block
+
+    pygame.init()
+
+    #instantiate some objects
     FC = FixationCross(color = "black")
     words_displayed = open("data/words_displayed.txt", "w")
-    notStim = Screen(color = "white", fixation_cross = FC)
-    redScreen = Screen(color = "red")
+    restScreen = Screen(color = "white", fixation_cross = FC)
     blankScreen = Screen(color = "white")
-    restScreen = Screen(color = "black")
-    latin_text = TextDisplay(font_type = "resources/Arial.ttf", font_size = 288, screen_bgColor = "white")
-    hebrew_text = TextDisplay(font_type = "resources/ArialHebrew.ttf", font_size = int(288 * arial_heightScaleFactor), screen_bgColor = "white")
+
+    # get and randomize a list of latin words from the word_list.txt file
+    word_list = []
+    with open("resources/word_list.txt") as list_file:
+        for line in list_file.readlines():
+            word_list.append(line.rstrip().upper())
+    random.shuffle(word_list)
+
+    # get list of TextDisplay objects to be displayed and randomize order
+    text_objs = []
+    for word in word_list[0:num_blocks*wordsPerBlock+1]:
+        latin_text = TextDisplay(text_content = word, vsync_value = 1, font_type = "resources/Arial.ttf", \
+                                 font_size = 288, screen_bgColor = "white")
+        hebrew_text = TextDisplay(text_content = code_hebrew(word), vsync_value = 2, font_type = "resources/ArialHebrew.ttf", \
+                                  font_size = int(288 * arial_heightScaleFactor), screen_bgColor = "white")
+        text_objs.append(latin_text)
+        text_objs.append(hebrew_text)
+    random.shuffle(text_objs)
     
     try:
-        #start sequence  
-        restScreen.run(duration = 3, vsync_value = 0)
-        bell()
-        restScreen.run(duration = 1, vsync_value = 0)  
-        restScreen.run(duration = 1, vsync_value = 13)  #begins the start frame
-        notStim.run(duration = 1, vsync_value = 0) 
-        notStim.run(duration = 1, vsync_value = 5)      #starts the recording
-        notStim.run(duration = 1, vsync_value = 0)
+        #start sequence
+        run_start_sequence()
+        restScreen.run(duration = 2, vsync_value = 0)
 
-        trial = 0
-        word_index = 0
-        word_counter = 0
-        while trial < num_trials:
-            while word_counter < wordsPerTrial:
-                word_counter += 1
-                word_index += 1
+        block = 0
+        while block < num_blocks:
+            for text_obj in text_objs[block*wordsPerBlock:block*wordsPerBlock + wordsPerBlock]:
 
                 #write words which will be displayed to output file
-                words_displayed.write(word_list[word_index] + "\n")
-                words_displayed.write(code_hebrew(word_list[word_index]).encode("utf8") + "\n")
+                words_displayed.write(text_obj.text_content.encode("utf8") + "\n")
 
-                #task
-                latin_text.run(text_content = word_list[word_index], duration = 1, vsync_value = 1)
-                notStim.run(duration = 1, vsync_value = 0)
-                hebrew_text.run(text_content = code_hebrew(word_list[word_index]), duration = 1, vsync_value = 2)
-                notStim.run(duration = 1, vsync_value = 0)
-            
-            word_counter = 0
+                #display text and blank screen
+                text_obj.run(duration = 1)
+                blankScreen.run(duration = 1, vsync_value = 0)
 
-            if trial < num_trials-1:
+            if block < num_blocks-1:
                 # add an empty line to text file to signify between trials
                 words_displayed.write("\n")
 
                 #rest period
                 bell()
-                restScreen.run(duration = 7, vsync_value = 0)
+                restScreen.run(duration = 4, vsync_value = 0)
                 bell()
-                restScreen.run(duration = 1, vsync_value = 0)
-                notStim.run(duration = random.uniform(2,4), vsync_value = 0)
+                restScreen.run(duration = random.uniform(1,3), vsync_value = 0)
 
-            trial += 1
+            block += 1
 
-    except UserEscape:
-        print "User stopped the sequence."
+    except UserEscape as exc:
+        print exc
     except:
         print "Unexpected error:"
         raise
     finally:
-        try:
-            #stop sequence
-            blankScreen.run(duration = 1, vsync_value = 13,)
-            blankScreen.run(duration = 1, vsync_value = 0,)
-            redScreen.run(duration = 1, vsync_value = 5, wait_on_user_keypress = True,)
-        except UserEscape:
-            pass
-        except:
-            print "Unexpected error:"
-            raise
-    
+        # stop sequence
+        run_stop_sequence()
+
     pygame.quit()
     sys.exit()
 
