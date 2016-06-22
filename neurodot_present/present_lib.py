@@ -19,7 +19,7 @@ COLORS = {
     'magenta' : (1.0,0.0,1.0),
     'yellow'  : (1.0,1.0,0.0),
     'white'   : (1.0,1.0,1.0),
-    'gray'    : (0.75,0.75,0.75)
+    'neutral-gray': (0.75,0.75,0.75)
 }
 
 SCREEN_LT = np.array((-1.0, 1.0))
@@ -165,7 +165,8 @@ class Screen:
                  constrain_aspect = True,
                  vsync_patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
                  vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
-                 fixation_cross = None
+                 fixation_cross = None,
+                 render_loop_rate = 70,
                  ):
         
         
@@ -225,7 +226,7 @@ class Screen:
                                      )
 
         
-        self.render_loop_rate = 60
+        self.render_loop_rate = render_loop_rate
         self.clock = pygame.time.Clock()
         
     def run(self, 
@@ -374,6 +375,9 @@ class CheckerBoardFlasher(Screen):
             vsync_value = self.vsync_value
         elif vsync_value is None:
             vsync_value = 1
+            
+        #set background color
+        glClearColor(0.75, 0.75, 0.75, 1.0)
 
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
