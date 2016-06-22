@@ -37,7 +37,7 @@ DEFAULT_FLASH_RATE = 17 #Hz
 
 def bell(blocking=False):
     pygame.mixer.init()
-    bell_sound = pygame.mixer.Sound('resources/bell.wav')
+    bell_sound = pygame.mixer.Sound(file = resources.get_bellpath("bell.wav"))
     ch = bell_sound.play()
     if blocking:
         while ch.get_busy():
@@ -448,8 +448,13 @@ class TextDisplay(Screen):
 
     def render_surface(self, text_content, font_size):
 
+        # get file path for font file if it was specified
+        if self.font_type is None:
+            font_path = self.font_type
+        else:
+            font_path = resources.get_fontpath(self.font_type)
+
         #render textSurface from text_content
-        font_path = resources.get_fontpath(self.font_type)
         self.font = pygame.font.Font(font_path, font_size)
         self.textSurface = self.font.render(text_content, 1, \
             [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \

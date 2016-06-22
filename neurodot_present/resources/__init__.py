@@ -9,3 +9,7 @@ def load_wordlist():
 def get_fontpath(font_type):
     fp = os.path.sep.join((module_path, font_type))
     return fp
+
+def get_bellpath(bell_name):
+	bp = os.path.sep.join((module_path, bell_name))
+	return bp
