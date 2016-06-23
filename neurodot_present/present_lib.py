@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import pygame, sys
-from pygame.locals import *
-from OpenGL.GL import *
-from OpenGL.GLU import *
+import pygame
+import OpenGL.GL as gl
+import OpenGL.GLU as glu
 import numpy as np
 import itertools
 
@@ -37,7 +36,7 @@ DEFAULT_FLASH_RATE = 17 #Hz
 
 def bell(blocking=False):
     pygame.mixer.init()
-    bell_sound = pygame.mixer.Sound(file = resources.get_bellpath("bell.wav"))
+    bell_sound = pygame.mixer.Sound(resources.get_bellpath("bell.wav"))
     ch = bell_sound.play()
     if blocking:
         while ch.get_busy():
@@ -52,16 +51,16 @@ class Quad:
         self.vertices = np.array((lt,lb,rb,rt))
         self.color = color
     def render(self):
-        glLoadIdentity()
-        glDisable(GL_LIGHTING)
+        gl.glLoadIdentity()
+        gl.glDisable(gl.GL_LIGHTING)
         try:
-            glBegin(GL_QUADS)
-            glColor3f(*self.color)
+            gl.glBegin(gl.GL_QUADS)
+            gl.glColor3f(*self.color)
             for v in self.vertices:
-                glVertex2f(*tuple(v))
-            glEnd()
+                gl.glVertex2f(*tuple(v))
+            gl.glEnd()
         finally:
-            glEnable(GL_LIGHTING)
+            gl.glEnable(gl.GL_LIGHTING)
 
 class FixationCross:
     def __init__(self,
@@ -87,16 +86,16 @@ class FixationCross:
                         ]
         
     def render(self):
-        glLoadIdentity()
-        glDisable(GL_LIGHTING)
+        gl.glLoadIdentity()
+        gl.glDisable(gl.GL_LIGHTING)
         try:
-            glBegin(GL_QUADS)
-            glColor3f(*self.color)
+            gl.glBegin(gl.GL_QUADS)
+            gl.glColor3f(*self.color)
             for v in self.vertices:
-                glVertex2f(*v)
-            glEnd()
+                gl.glVertex2f(*v)
+            gl.glEnd()
         finally:
-            glEnable(GL_LIGHTING)
+            gl.glEnable(gl.GL_LIGHTING)
 
 class VsyncPatch:
     def __init__(self, left, bottom, width, height,
@@ -138,24 +137,24 @@ class VsyncPatch:
     def render(self, value):
         left, bottom, width, height = (self.left,self.bottom,self.width,self.height)
         bit_colors = self.compute_bit_colors(value)
-        glLoadIdentity()
-        glDisable(GL_LIGHTING)
+        gl.glLoadIdentity()
+        gl.glDisable(gl.GL_LIGHTING)
 
         try:
             #bit 0, sub square at bottom/right corner, also the vsync trigger bit
-            glColor3f(*bit_colors[0])
-            glRectf(left + width/2.0, bottom,  left + width, bottom + height/2.0) #left,bottom -> right,top
+            gl.glColor3f(*bit_colors[0])
+            gl.glRectf(left + width/2.0, bottom,  left + width, bottom + height/2.0) #left,bottom -> right,top
             #bit 1, sub square at bottom/left corner
-            glColor3f(*bit_colors[1])
-            glRectf(left, bottom,left + width/2.0, bottom + height/2.0) #left,bottom -> right,top
+            gl.glColor3f(*bit_colors[1])
+            gl.glRectf(left, bottom,left + width/2.0, bottom + height/2.0) #left,bottom -> right,top
             #bit 2, sub square at top/left corner
-            glColor3f(*bit_colors[2])
-            glRectf(left, bottom + height/2.0,left + width/2.0, bottom + height) #left,bottom -> right,top
+            gl.glColor3f(*bit_colors[2])
+            gl.glRectf(left, bottom + height/2.0,left + width/2.0, bottom + height) #left,bottom -> right,top
             #bit 3, sub square at top/right corner
-            glColor3f(*bit_colors[3])
-            glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
+            gl.glColor3f(*bit_colors[3])
+            gl.glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
         finally:
-            glEnable(GL_LIGHTING)
+            gl.glEnable(gl.GL_LIGHTING)
 
 
 class Screen:
@@ -191,10 +190,10 @@ class Screen:
                                                       )
         #configure the display perspective
         # Fill the entire graphics window!
-        glViewport(0, 0, w, h)
+        gl.glViewport(0, 0, w, h)
         # Set the projection matrix... our "view"
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
         aspect_ratio = float(w)/h
         left, right, bottom, top = (SCREEN_LT[0],SCREEN_RB[0],SCREEN_RB[1],SCREEN_LT[1])
         if constrain_aspect:  # Set the aspect ratio of the plot so that it is not distorted
@@ -206,7 +205,7 @@ class Screen:
                 #left, right, bottom, top
                 left   *= aspect_ratio
                 right  *= aspect_ratio
-        gluOrtho2D(left, right, bottom, top)
+        glu.gluOrtho2D(left, right, bottom, top)
         self.screen_left   = left
         self.screen_right  = right
         self.screen_bottom = bottom
@@ -244,9 +243,9 @@ class Screen:
         is_running = True
         while is_running:
             #prepare rendering model
-            glClear(GL_COLOR_BUFFER_BIT)
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadIdentity()
             #move so that board is center and render
             #glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
             screen_quad.render()
@@ -275,8 +274,8 @@ class Screen:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            elif event.type == KEYDOWN:
-                if (event.key == K_ESCAPE) and (not mask_user_escape):
+            elif event.type == pygame.KEYDOWN:
+                if (event.key == pygame.K_ESCAPE) and (not mask_user_escape):
                     raise UserEscape
         return True
 
@@ -316,17 +315,17 @@ class CheckerBoard:
         h = self.height
         color1 = self.color1
         color2 = self.color2
-        glDisable(GL_LIGHTING)
+        gl.glDisable(gl.GL_LIGHTING)
         try:
             for x in range(0, self.nrows):
                 for y in range(0, self.nrows):
                     if (x + y) % 2 == 0:
-                        glColor3f(*color1)
+                        gl.glColor3f(*color1)
                     else:
-                        glColor3f(*color2)
-                    glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
+                        gl.glColor3f(*color2)
+                    gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
         finally:
-            glEnable(GL_LIGHTING)
+            gl.glEnable(gl.GL_LIGHTING)
         
 class CheckerBoardFlasher(Screen):
     def __init__(self,
@@ -381,11 +380,11 @@ class CheckerBoardFlasher(Screen):
         is_running = True
         while is_running:
             #prepare rendering model
-            glClear(GL_COLOR_BUFFER_BIT)
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadIdentity()
             #move so that board is center and render
-            glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
+            gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
             CB.render()
             #render the vsync patch
             self.vsync_patch.render(value = vsync_value)
@@ -498,7 +497,7 @@ class TextDisplay(Screen):
             self.textSurface = pygame.transform.scale(self.textSurface, (int(width_scale * self.textSurface.get_width()), int(height_scale * self.textSurface.get_height())))
 
         #set background color
-        glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+        gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
         #prepare some values for rendering centered text
         centerOffset_pixels = [-self.textSurface.get_width()/2, -self.textSurface.get_height()/2]
@@ -507,13 +506,13 @@ class TextDisplay(Screen):
 
         while is_running:
             #prepare rendering model
-            glClear(GL_COLOR_BUFFER_BIT)
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadIdentity()
 
             #render text
-            glRasterPos2d(*raster_position)
-            glDrawPixels(self.textSurface.get_width(), self.textSurface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, textData)
+            gl.glRasterPos2d(*raster_position)
+            gl.glDrawPixels(self.textSurface.get_width(), self.textSurface.get_height(), gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, textData)
 
             #render the vsync patch
             self.vsync_patch.render(value = vsync_value)
