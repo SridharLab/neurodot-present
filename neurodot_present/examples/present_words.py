@@ -4,6 +4,8 @@ import random
 from neurodot_present.present_lib import Screen, FixationCross, TextDisplay, UserEscape, bell, run_start_sequence, run_stop_sequence
 import neurodot_present.resources
 
+STIMULUS_DURATION = 0.5
+
 # encodes a latin string in a randomly generated hebrew cypher
 def code_hebrew(latin_string):
     latin_alphabet = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -25,9 +27,9 @@ def code_hebrew(latin_string):
 
 def main():
 
-    arial_heightScaleFactor = 1.0487012987  # the height of ArialHebrew characters differ from Arial chars by this factor
-    num_blocks    = 24    # num_blocks * wordsPerBlock should not exceed 512
-    wordsPerBlock = 8     # words displayed (both latin and hebrew) per block
+    arial_heightScaleFactor = 1.333333333  # the height of ArialHebrew characters differ from Arial chars by this factor
+    num_blocks    = 16    # num_blocks * wordsPerBlock should not exceed 512
+    wordsPerBlock = 16     # words displayed (both latin and hebrew) per block
 
     pygame.init()
     pygame.mouse.set_visible(False)
@@ -87,10 +89,10 @@ def main():
                 #display latin or hebrew text
                 if stim['lang_id'] == 1:
                     words_displayed.write(stim['word'].encode("utf8") + "\n")
-                    latin_text.run(text_content = stim['word'], duration = 1)
+                    latin_text.run(text_content = stim['word'], duration = STIMULUS_DURATION)
                 elif stim['lang_id'] == 2:
                     words_displayed.write(stim['word'].encode("utf8") + "\n")
-                    hebrew_text.run(text_content = stim['word'], duration = 1)
+                    hebrew_text.run(text_content = stim['word'], duration = STIMULUS_DURATION)
 
                 # display blank screen
                 blankScreen.run(duration = 1, vsync_value = 0)
@@ -102,7 +104,7 @@ def main():
 
                 #rest period
                 bell()
-                restScreen.run(duration = 4, vsync_value = 0)
+                restScreen.run(duration = 3, vsync_value = 0)
                 bell()
                 restScreen.run(duration = random.uniform(1,3), vsync_value = 0)
 

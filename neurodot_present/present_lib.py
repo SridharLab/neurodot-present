@@ -37,7 +37,8 @@ DEFAULT_FLASH_RATE = 17 #Hz
 
 def bell(blocking=False):
     pygame.mixer.init()
-    bell_sound = pygame.mixer.Sound(file = resources.get_bellpath("bell.wav"))
+    bell_sound = pygame.mixer.Sound(resources.get_bellpath("bell.wav"))
+    #bell_sound = pygame.mixer.Sound(filename = "resources/bell.wav")
     ch = bell_sound.play()
     if blocking:
         while ch.get_busy():
@@ -352,6 +353,7 @@ class CheckerBoardFlasher(Screen):
                            width = None,
                            color1 = 'white',
                            color2 = 'black',
+                           screen_bgColor = 'neutral-gray',
                            vsync_value = None
                            ):
         #run colors through filter to catch names and convert to RGB
@@ -363,6 +365,7 @@ class CheckerBoardFlasher(Screen):
         self.nrows = nrows
         self.CB1 = CheckerBoard(nrows,width, color1 = color1, color2 = color2)
         self.CB2 = CheckerBoard(nrows,width, color1 = color2, color2 = color1) #reversed pattern
+        self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
     
     def run(self, duration = 5, vsync_value = None):
@@ -377,7 +380,7 @@ class CheckerBoardFlasher(Screen):
             vsync_value = 1
             
         #set background color
-        glClearColor(0.75, 0.75, 0.75, 1.0)
+        glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
