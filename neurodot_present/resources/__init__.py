@@ -12,4 +12,4 @@ def get_fontpath(font_type):
 
 def get_bellpath(bell_name):
     bp = os.path.sep.join((module_path, bell_name))
-    return bp
+    return unicode(bp)
