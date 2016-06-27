@@ -84,7 +84,7 @@ class FixationCross:
                          (position[0] + thickness/2, position[1] - size/2.0),  #right-bottom
                          (position[0] + thickness/2, position[1] + size/2.0),  #right-top
                         ]
-        
+
     def render(self):
         gl.glLoadIdentity()
         gl.glDisable(gl.GL_LIGHTING)
@@ -102,7 +102,7 @@ class VsyncPatch:
                  on_color  = COLORS['white'],
                  off_color = COLORS['black'],
                  ):
-        self.vertices = np.array(((left      , bottom),          
+        self.vertices = np.array(((left      , bottom),
                                   (left+width, bottom),           #right bottom
                                   (left+width, bottom + height),  #right top
                                   (left      , bottom + height),  #left  top
@@ -113,7 +113,7 @@ class VsyncPatch:
         self.height = height
         self.on_color  = on_color
         self.off_color = off_color
-        
+
     def compute_bit_colors(self, value):
         bit_colors = []
         if value & 0b0001:  #bit0,  also the vsync trigger bit
@@ -133,7 +133,7 @@ class VsyncPatch:
         else:
             bit_colors.append(self.off_color)
         return bit_colors
-            
+
     def render(self, value):
         left, bottom, width, height = (self.left,self.bottom,self.width,self.height)
         bit_colors = self.compute_bit_colors(value)
@@ -167,11 +167,11 @@ class Screen:
                  fixation_cross = None,
                  render_loop_rate = 70,
                  ):
-        
-        
+
+
         self.color = COLORS.get(color, color)
         self.fixation_cross = fixation_cross
-        
+
         #start up pygame
         pygame.init()
         if display_mode is None:
@@ -184,10 +184,10 @@ class Screen:
         if DEBUG:  #do in window while debugging
             fullscreen_flag_value = 0
         self.display_surface = pygame.display.set_mode(display_mode,
-                                                       pygame.OPENGL 
+                                                       pygame.OPENGL
                                                        | pygame.DOUBLEBUF
                                                        | pygame.HWSURFACE
-                                                       | fullscreen_flag_value 
+                                                       | fullscreen_flag_value
                                                       )
         #configure the display perspective
         # Fill the entire graphics window!
@@ -216,7 +216,7 @@ class Screen:
                                                 (right, bottom),
                                                 (right, top),
                                                ))
-        
+
         #define the vsync patch as being in the bottom right corner
         self.vsync_patch = VsyncPatch(left   = self.screen_right - vsync_patch_width,
                                       bottom = self.screen_bottom,
@@ -224,23 +224,23 @@ class Screen:
                                       height = vsync_patch_height
                                      )
 
-        
+
         self.render_loop_rate = render_loop_rate
         self.clock = pygame.time.Clock()
-        
-    def run(self, 
+
+    def run(self,
             duration = 5,
             vsync_value = 0,
             wait_on_user_escape = False,
             mask_user_escape = False,
            ):
         duration *= 1e3 #convert to milliseconds
-        
+
         scv = self.screen_corner_vertices
         screen_quad = Quad(scv[0],scv[1],scv[2],scv[3], color = self.color)
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
-        
+
         is_running = True
         while is_running:
             #prepare rendering model
@@ -270,7 +270,7 @@ class Screen:
                     is_waiting = self.handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
             except UserEscape:# as exc:
                 pass
-        
+
     def handle_events(self, mask_user_escape = False):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -292,7 +292,7 @@ def run_start_sequence(fixation_cross = None):
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
     black_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-        
+
 def run_stop_sequence(fixation_cross = None):
     #instantiate screens
     black_SCR = Screen(color = "black", fixation_cross = fixation_cross)
@@ -327,7 +327,7 @@ class CheckerBoard:
                     gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
         finally:
             gl.glEnable(gl.GL_LIGHTING)
-        
+
 class CheckerBoardFlasher(Screen):
     def __init__(self,
                  display_mode = None,
@@ -365,10 +365,10 @@ class CheckerBoardFlasher(Screen):
         self.CB2 = CheckerBoard(nrows,width, color1 = color2, color2 = color1) #reversed pattern
         self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
-    
+
     def run(self, duration = 5, vsync_value = None):
         duration *= 1e3 #convert to milliseconds
-        
+
         #white/black alterning for intermediate signals
         CB_cycle = itertools.cycle((self.CB1,self.CB2))
 
@@ -376,9 +376,9 @@ class CheckerBoardFlasher(Screen):
             vsync_value = self.vsync_value
         elif vsync_value is None:
             vsync_value = 1
-            
+
         #set background color
-        glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+        gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
@@ -486,8 +486,8 @@ class TextDisplay(Screen):
         if vsync_value is None:
             vsync_value = self.vsync_value
 
-        duration *= 1e3 #convert to milliseconds    
-     
+        duration *= 1e3 #convert to milliseconds
+
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
         is_running = True
@@ -531,7 +531,7 @@ class TextDisplay(Screen):
 
             dt = self.clock.tick_busy_loop(self.render_loop_rate) #more accurate than tick, but uses more CPU resources
             t  = pygame.time.get_ticks()
-            
+
             if t - t0 > duration:
                 is_running = False
 
