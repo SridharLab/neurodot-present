@@ -378,7 +378,7 @@ class CheckerBoardFlasher(Screen):
             vsync_value = 1
             
         #set background color
-        glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+        gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
         t0 = pygame.time.get_ticks()
         t  = pygame.time.get_ticks()
