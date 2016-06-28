@@ -13,9 +13,11 @@ neurodot_present.present_lib.DEBUG = True
 min_word_characters = 4  # characters in shortest word found in word_list.txt
 max_word_characters = 6  # characters in longest word found in word_list.txt
 font_size = 288
-latinText = TextDisplay(font_type="Arial.ttf")
-hebrewText = TextDisplay(font_type="ArialHebrew.ttf")
-arial_heightScaleFactor = 1.333333333
+#latinText = TextDisplay(font_type="Arial.ttf")
+#hebrewText = TextDisplay(font_type="ArialHebrew.ttf")
+latinText = TextDisplay(font_type="Everson Mono Bold.ttf")
+hebrewText = TextDisplay(font_type="Everson Mono Bold.ttf")
+#arial_heightScaleFactor = 1.333333333
 hebrew_alphabet = list(
     u"\u05D0\u05D1\u05D2\u05D3\u05D4\u05D5\u05D6\u05D7\u05D8\u05D9\u05DA\u05DB\u05DC\u05DD\u05DE\u05DF\u05E1\u05E2\u05E3\u05E4\u05E5\u05E6\u05E7\u05E8\u05E9\u05EA")
 
@@ -25,7 +27,8 @@ def getLatinWidth(str):
 
 
 def getHebWidth(str):
-    return hebrewText.render_surface(text_content=str, font_size=int(font_size * arial_heightScaleFactor)).get_width()
+    #return hebrewText.render_surface(text_content=str, font_size=int(font_size * arial_heightScaleFactor)).get_width()
+    return hebrewText.render_surface(text_content=str, font_size=font_size).get_width()
 
 # get list of words from text file
 word_list = []
