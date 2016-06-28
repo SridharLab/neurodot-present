@@ -5,6 +5,7 @@ This utility is designed to find a range of widths in pixels that will be displa
 presentation, with the consideration that the width of hebrew words displayed depends on the (random) latin to hebrew
 cipher.
 """
+import os
 import collections
 from neurodot_present.present_lib import TextDisplay
 import neurodot_present.resources
@@ -13,11 +14,14 @@ neurodot_present.present_lib.DEBUG = True
 min_word_characters = 4  # characters in shortest word found in word_list.txt
 max_word_characters = 6  # characters in longest word found in word_list.txt
 font_size = 288
+font_type = 'FreeMono.ttf'
+
 #latinText = TextDisplay(font_type="Arial.ttf")
 #hebrewText = TextDisplay(font_type="ArialHebrew.ttf")
-latinText = TextDisplay(font_type="Everson Mono Bold.ttf")
-hebrewText = TextDisplay(font_type="Everson Mono Bold.ttf")
 #arial_heightScaleFactor = 1.333333333
+
+latinText = TextDisplay(font_type=font_type)
+hebrewText = TextDisplay(font_type=font_type)
 hebrew_alphabet = list(
     u"\u05D0\u05D1\u05D2\u05D3\u05D4\u05D5\u05D6\u05D7\u05D8\u05D9\u05DA\u05DB\u05DC\u05DD\u05DE\u05DF\u05E1\u05E2\u05E3\u05E4\u05E5\u05E6\u05E7\u05E8\u05E9\u05EA")
 
@@ -116,6 +120,8 @@ shortestHebWord = shortestHebWord.encode('raw_unicode_escape')
 longestHebWord = longestHebWord.encode('raw_unicode_escape')
 
 # print results
+print ""
+print "Testing with", font_size, "pt", os.path.splitext(font_type)[0], ":"
 print ""
 print 'Shortest Latin: ','{0:>36} -{1:>5} pixels'.format(shortestLatinWord, shortestLatinWidth)
 print 'Shortest Hebrew:', '{0:>36} -{1:>5} pixels'.format(shortestHebWord, shortestHebWidth)

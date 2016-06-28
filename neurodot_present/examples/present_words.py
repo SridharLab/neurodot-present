@@ -29,6 +29,8 @@ def main():
 
     num_blocks    = 16    # num_blocks * wordsPerBlock should not exceed 512
     wordsPerBlock = 16     # words displayed (both latin and hebrew) per block
+    word_lengths = [4, 5, 6]   # character lengths to select from word_list.txt
+
 
     #ensure that video mode is at the maxium FPS
     if sys.platform.startswith("linux"):
@@ -54,15 +56,16 @@ def main():
     restScreen = Screen(color = "white", fixation_cross = FC)
     blankScreen = Screen(color = "white")
     text = TextDisplay(font_size = 288,
-                             font_type = "Everson Mono Bold.ttf",
-                             screen_bgColor = "white"
+                             font_type = "FreeMono.ttf",
+                             screen_bgColor = "white",
                              )
 
     # get and randomize a list of latin words from the word_list.txt file
     word_list = []
     with neurodot_present.resources.load_wordlist() as list_file:
         for line in list_file.readlines():
-            word_list.append(line.rstrip().upper())
+            if len(line.rstrip()) in word_lengths:
+                word_list.append(line.rstrip().upper())
     random.shuffle(word_list)
 
     # get list of dictionaries for latin/hebrew words and randomize
