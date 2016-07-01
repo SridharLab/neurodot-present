@@ -5,6 +5,7 @@ from neurodot_present.present_lib import Screen, FixationCross, TextDisplay, Use
 import neurodot_present.resources
 
 STIMULUS_DURATION = 0.5
+SUPRESS_TXT_OUTPUT = True  # supress writing words displayed to text files
 
 # encodes a latin string in a randomly generated hebrew cypher
 def code_hebrew(latin_string):
@@ -51,7 +52,8 @@ def main():
         num += 1
 
     #instantiate some objects
-    words_displayed = open(fn, "w")
+    if not SUPRESS_TXT_OUTPUT:
+        words_displayed = open(fn, "w")
     FC = FixationCross(color = "black")
     restScreen = Screen(color = "white", fixation_cross = FC)
     blankScreen = Screen(color = "white")
@@ -88,7 +90,9 @@ def main():
         while block < num_blocks:
             for stim in stim_list[block*wordsPerBlock : block*wordsPerBlock + wordsPerBlock]:
 
-                words_displayed.write(stim['word'].encode("utf8") + "\n")
+                if not SUPRESS_TXT_OUTPUT:
+                    words_displayed.write(stim['word'].encode("utf8") + "\n")
+
                 text.run(text_content = stim['word'],
                          duration = STIMULUS_DURATION,
                          vsync_value = stim['vsync_value']
@@ -101,7 +105,8 @@ def main():
             if block < num_blocks-1:
 
                 # add an empty line to text file to signify between trials
-                words_displayed.write("\n")
+                if not SUPRESS_TXT_OUTPUT:
+                    words_displayed.write("\n")
 
                 #rest period
                 bell()
@@ -117,8 +122,10 @@ def main():
         print "Unexpected error:"
         raise
     finally:
+        if not SUPRESS_TXT_OUTPUT:
+            words_displayed.close()
+
         # stop sequence
-        words_displayed.close()
         run_stop_sequence()
 
     pygame.quit()

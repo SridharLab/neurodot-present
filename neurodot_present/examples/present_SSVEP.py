@@ -6,11 +6,11 @@ import itertools
 import neurodot_present.present_lib as pl
 from neurodot_present.present_lib import Screen, FixationCross, CheckerBoardFlasher, UserEscape, run_start_sequence, run_stop_sequence
 
-pl.DEBUG = True
+pl.DEBUG = False
 ################################################################################
 if __name__ == "__main__":
     import random
-    
+
     pygame.init()
 
     FLASH_RATES  = [16,19,23] #Hz
@@ -20,11 +20,11 @@ if __name__ == "__main__":
     CHECKERBOARD_NROWS = 64
     FLASH_DURATION = 2       #seconds
     PAUSE_DURATION_RANGE = (2.0,5.0)
-    
+
     FC = FixationCross()
-    
-    CBFs
-    
+
+    #CBFs
+
     try:
         #start sequence
         run_start_sequence()
