@@ -5,7 +5,7 @@ from neurodot_present.present_lib import Screen, FixationCross, TextDisplay, Use
 import neurodot_present.resources
 
 STIMULUS_DURATION = 0.5
-SUPRESS_TXT_OUTPUT = True  # supress writing words displayed to text files
+SUPRESS_TXT_OUTPUT = False  # supress writing words displayed to text files
 
 # encodes a latin string in a randomly generated hebrew cypher
 def code_hebrew(latin_string):
