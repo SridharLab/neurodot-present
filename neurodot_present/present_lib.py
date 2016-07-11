@@ -476,17 +476,18 @@ class DoubleCheckerBoardFlasher(Screen):
         rightCB = rightCB_cycle.next()
         is_running = True
 
-        loops = 0
+        LCM_rate = self.flash_rate_left * self.flash_rate_right
+        loops = 0.0
         while is_running:
             #prepare rendering model
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
 
-            if loops % self.flash_rate_left == 0:
+            if loops % self.flash_rate_right == 0:
                 leftCB = leftCB_cycle.next()
 
-            if loops % self.flash_rate_right == 0:
+            if loops % self.flash_rate_left == 0:
                 rightCB = rightCB_cycle.next()
 
             # translate left board to center and left, then render
@@ -502,8 +503,8 @@ class DoubleCheckerBoardFlasher(Screen):
 
             self.vsync_patch.render(value = vsync_value)
             pygame.display.flip()
-            dt = self.clock.tick_busy_loop(self.flash_rate_left * self.flash_rate_right)
-            loops += 1
+            dt = self.clock.tick_busy_loop(LCM_rate)
+            loops += 1.0
 
             #render the vsync patch
             #show the scene
