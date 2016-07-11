@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import time
 import pygame
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import numpy as np
 import itertools
+import fractions
 
 import resources
 
@@ -417,7 +419,7 @@ class CheckerBoardFlasher(Screen):
 class DoubleCheckerBoardFlasher(Screen):
     def __init__(self,
                  display_mode = None,
-                 flash_rate_left = DEFAULT_FLASH_RATE,
+                 flash_rate_left  = DEFAULT_FLASH_RATE,
                  flash_rate_right = DEFAULT_FLASH_RATE,
                  vsync_patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
                  vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
@@ -430,7 +432,7 @@ class DoubleCheckerBoardFlasher(Screen):
                         vsync_patch_width  = vsync_patch_width,
                         vsync_patch_height = vsync_patch_height,
                        )
-        self.flash_rate_left = flash_rate_left
+        self.flash_rate_left  = flash_rate_left
         self.flash_rate_right = flash_rate_right
 
     def setup_checkerboards(self,
@@ -456,8 +458,6 @@ class DoubleCheckerBoardFlasher(Screen):
         self.vsync_value = vsync_value
 
     def run(self, duration = 5, vsync_value = None):
-        duration *= 1e3 #convert to milliseconds
-
         #white/black alterning for intermediate signals
         leftCB_cycle = itertools.cycle((self.CB1,self.CB2))
         rightCB_cycle = itertools.cycle((self.CB3,self.CB4))
@@ -470,58 +470,66 @@ class DoubleCheckerBoardFlasher(Screen):
         #set background color
         gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
-        t0 = pygame.time.get_ticks()
-        t  = pygame.time.get_ticks()
+
+        vsync_patch = self.vsync_patch
+
         leftCB = leftCB_cycle.next()
         rightCB = rightCB_cycle.next()
+
+
         is_running = True
 
-        LCM_rate = self.flash_rate_left * self.flash_rate_right
-        loops = 0.0
+        xC, yC = (-0.5*self.board_width,-0.5*self.board_width)
+        xL, yL = (xC - 0.5*self.screen_right, yC)
+        xR, yR = (xC + 0.5*self.screen_right, yC)
+
+        dtL = 1.0/self.flash_rate_left
+        dtR = 1.0/self.flash_rate_right
+        tL  = time.time() #time since last change
+        tR  = time.time() #time since last change
+        t0 = time.time()
+        t_list = []
+
         while is_running:
             #prepare rendering model
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
 
-            if loops % self.flash_rate_right == 0:
+            #get fresh time
+            t = time.time()
+            if t > (tL + dtL):
                 leftCB = leftCB_cycle.next()
-
-            if loops % self.flash_rate_left == 0:
+                tL  = t #update change time
+            if t > (tR + dtR):
                 rightCB = rightCB_cycle.next()
+                tR  = t #update change time
 
-            # translate left board to center and left, then render
-            gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
-            gl.glTranslatef(-0.5*self.screen_right, 0.0, 0.0)
+            # translate to position of left board
+            gl.glTranslatef(xL, yL, 0.0)
             leftCB.render()
 
-            # translate right board to center and right, then render
+            # translate to position of right board
             gl.glLoadIdentity()
-            gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
-            gl.glTranslatef(0.5*self.screen_right, 0.0, 0.0)
+            gl.glTranslatef(xR, yR, 0.0)
             rightCB.render()
 
-            self.vsync_patch.render(value = vsync_value)
-            pygame.display.flip()
-            dt = self.clock.tick_busy_loop(LCM_rate)
-            loops += 1.0
+            vsync_patch.render(value = vsync_value)
 
-            #render the vsync patch
             #show the scene
-            # pygame.display.flip()
+            pygame.display.flip()
+
+            #t_list.append(t)  #this is for measuring the loop delay
+
             #handle outstanding events
             is_running = self.handle_events()
-            # if self.flash_rate_left > 0:
-            #     dt = self.clock.tick_busy_loop(self.flash_rate_left) #more accurate than tick, but uses more CPU resources
-            #     leftCB = leftCB_cycle.next()
-            # if self.flash_rate_right > 0:
-            #     dt = self.clock.tick_busy_loop(self.flash_rate_right) #more accurate than tick, but uses more CPU resources
-            #     rightCB = rightCB_cycle.next()
-            # else:
-            #     dt = self.clock.tick_busy_loop(self.render_loop_rate) #more accurate than tick, but uses more CPU resources
-            t  = pygame.time.get_ticks()
+            #print t, t0, duration
             if t - t0 > duration:
                 is_running = False
+        #-----------------------------------------------------------------------
+        #this is for measuring the loop delay
+        #import numpy as np
+        #print "mean loop dt:", np.array(np.diff(t_list).mean())
 
 class TextDisplay(Screen):
     def __init__(self,
