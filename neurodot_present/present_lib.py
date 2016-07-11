@@ -303,7 +303,13 @@ def run_stop_sequence(fixation_cross = None):
     red_SCR.run(duration = 0, vsync_value = 5, wait_on_user_escape = True)
 
 class CheckerBoard:
-    def __init__(self, nrows, width = 1.0, height = None, color1 = COLORS['white'], color2 = COLORS['black']):
+    def __init__(self,
+                 nrows,
+                 width = 1.0,
+                 height = None,
+                 color1 = COLORS['white'],
+                 color2 = COLORS['black']
+                 ):
         self.nrows = int(nrows)
         self.width = width
         if height is None:
@@ -311,6 +317,7 @@ class CheckerBoard:
         self.height = height
         self.color1 = color1
         self.color2 = color2
+
     def render(self):
         w = self.width
         h = self.height
@@ -403,6 +410,114 @@ class CheckerBoardFlasher(Screen):
                 CB = CB_cycle.next()
             else:
                 dt = self.clock.tick_busy_loop(self.render_loop_rate) #more accurate than tick, but uses more CPU resources
+            t  = pygame.time.get_ticks()
+            if t - t0 > duration:
+                is_running = False
+
+class DoubleCheckerBoardFlasher(Screen):
+    def __init__(self,
+                 display_mode = None,
+                 flash_rate_left = DEFAULT_FLASH_RATE,
+                 flash_rate_right = DEFAULT_FLASH_RATE,
+                 vsync_patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
+                 vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
+                 constrain_aspect = True,
+                 ):
+        Screen.__init__(self,
+                        color = "black",
+                        display_mode = display_mode,
+                        constrain_aspect = constrain_aspect,
+                        vsync_patch_width  = vsync_patch_width,
+                        vsync_patch_height = vsync_patch_height,
+                       )
+        self.flash_rate_left = flash_rate_left
+        self.flash_rate_right = flash_rate_right
+
+    def setup_checkerboards(self,
+                           nrows,
+                           width = 2.0 / 64.0,  # width of checks for 64x64 full screen board
+                           color1 = 'white',
+                           color2 = 'black',
+                           screen_bgColor = 'neutral-gray',
+                           vsync_value = None
+                           ):
+        #run colors through filter to catch names and convert to RGB
+        color1 = COLORS.get(color1, color1)
+        color2 = COLORS.get(color2, color2)
+        # if width is None:
+        #     width = 2.0/nrows #fill whole screen
+        self.board_width = width*nrows
+        self.nrows = nrows
+        self.CB1 = CheckerBoard(nrows, width, color1 = color1, color2 = color2)
+        self.CB2 = CheckerBoard(nrows, width, color1 = color2, color2 = color1) #reversed pattern
+        self.CB3 = CheckerBoard(nrows, width, color1 = color1, color2 = color2)
+        self.CB4 = CheckerBoard(nrows, width, color1 = color2, color2 = color1) # reversed
+        self.screen_bgColor = COLORS[screen_bgColor]
+        self.vsync_value = vsync_value
+
+    def run(self, duration = 5, vsync_value = None):
+        duration *= 1e3 #convert to milliseconds
+
+        #white/black alterning for intermediate signals
+        leftCB_cycle = itertools.cycle((self.CB1,self.CB2))
+        rightCB_cycle = itertools.cycle((self.CB3,self.CB4))
+
+        if vsync_value is None and not self.vsync_value is None:
+            vsync_value = self.vsync_value
+        elif vsync_value is None:
+            vsync_value = 1
+
+        #set background color
+        gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+
+        t0 = pygame.time.get_ticks()
+        t  = pygame.time.get_ticks()
+        leftCB = leftCB_cycle.next()
+        rightCB = rightCB_cycle.next()
+        is_running = True
+
+        loops = 0
+        while is_running:
+            #prepare rendering model
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadIdentity()
+
+            if loops % self.flash_rate_left == 0:
+                leftCB = leftCB_cycle.next()
+
+            if loops % self.flash_rate_right == 0:
+                rightCB = rightCB_cycle.next()
+
+            # translate left board to center and left, then render
+            gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
+            gl.glTranslatef(-0.5*self.screen_right, 0.0, 0.0)
+            leftCB.render()
+
+            # translate right board to center and right, then render
+            gl.glLoadIdentity()
+            gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
+            gl.glTranslatef(0.5*self.screen_right, 0.0, 0.0)
+            rightCB.render()
+
+            self.vsync_patch.render(value = vsync_value)
+            pygame.display.flip()
+            dt = self.clock.tick_busy_loop(self.flash_rate_left * self.flash_rate_right)
+            loops += 1
+
+            #render the vsync patch
+            #show the scene
+            # pygame.display.flip()
+            #handle outstanding events
+            is_running = self.handle_events()
+            # if self.flash_rate_left > 0:
+            #     dt = self.clock.tick_busy_loop(self.flash_rate_left) #more accurate than tick, but uses more CPU resources
+            #     leftCB = leftCB_cycle.next()
+            # if self.flash_rate_right > 0:
+            #     dt = self.clock.tick_busy_loop(self.flash_rate_right) #more accurate than tick, but uses more CPU resources
+            #     rightCB = rightCB_cycle.next()
+            # else:
+            #     dt = self.clock.tick_busy_loop(self.render_loop_rate) #more accurate than tick, but uses more CPU resources
             t  = pygame.time.get_ticks()
             if t - t0 > duration:
                 is_running = False
