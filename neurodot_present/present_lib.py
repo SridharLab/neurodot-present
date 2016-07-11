@@ -417,7 +417,7 @@ class CheckerBoardFlasher(Screen):
 class DoubleCheckerBoardFlasher(Screen):
     def __init__(self,
                  display_mode = None,
-                 flash_rate_left = DEFAULT_FLASH_RATE,
+                 flash_rate_left  = DEFAULT_FLASH_RATE,
                  flash_rate_right = DEFAULT_FLASH_RATE,
                  vsync_patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
                  vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
@@ -430,7 +430,7 @@ class DoubleCheckerBoardFlasher(Screen):
                         vsync_patch_width  = vsync_patch_width,
                         vsync_patch_height = vsync_patch_height,
                        )
-        self.flash_rate_left = flash_rate_left
+        self.flash_rate_left  = flash_rate_left
         self.flash_rate_right = flash_rate_right
 
     def setup_checkerboards(self,
@@ -476,6 +476,9 @@ class DoubleCheckerBoardFlasher(Screen):
         rightCB = rightCB_cycle.next()
         is_running = True
 
+        LCM_rate = self.flash_rate_left * self.flash_rate_right
+        nloops_left  = LCM_rate/self.flash_rate_left
+        nloops_right = LCM_rate/self.flash_rate_right
         loops = 0
         while is_running:
             #prepare rendering model
@@ -483,10 +486,10 @@ class DoubleCheckerBoardFlasher(Screen):
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
 
-            if loops % self.flash_rate_left == 0:
+            if loops % nloops_left == 0:
                 leftCB = leftCB_cycle.next()
 
-            if loops % self.flash_rate_right == 0:
+            if loops % nloops_right == 0:
                 rightCB = rightCB_cycle.next()
 
             # translate left board to center and left, then render
@@ -502,7 +505,7 @@ class DoubleCheckerBoardFlasher(Screen):
 
             self.vsync_patch.render(value = vsync_value)
             pygame.display.flip()
-            dt = self.clock.tick_busy_loop(self.flash_rate_left * self.flash_rate_right)
+            dt = self.clock.tick_busy_loop(LCM_rate)
             loops += 1
 
             #render the vsync patch
