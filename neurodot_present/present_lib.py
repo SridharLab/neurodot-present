@@ -441,7 +441,9 @@ class DoubleCheckerBoardFlasher(Screen):
                            color1 = 'white',
                            color2 = 'black',
                            screen_bgColor = 'neutral-gray',
-                           vsync_value = None
+                           vsync_value = None,
+                           flash_rate_left = None,
+                           flash_rate_right = None,
                            ):
         #run colors through filter to catch names and convert to RGB
         color1 = COLORS.get(color1, color1)
@@ -456,6 +458,10 @@ class DoubleCheckerBoardFlasher(Screen):
         self.CB4 = CheckerBoard(nrows, width, color1 = color2, color2 = color1) # reversed
         self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
+        if not flash_rate_left is None:
+            self.flash_rate_left  = flash_rate_left
+        if not flash_rate_right is None:
+            self.flash_rate_right = flash_rate_right
 
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
         self.xL, self.yL = (self.xC - 0.5*self.screen_right, self.yC)
