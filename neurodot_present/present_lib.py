@@ -457,10 +457,19 @@ class DoubleCheckerBoardFlasher(Screen):
         self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
 
-    def run(self, duration = 5, vsync_value = None):
+        self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
+        self.xL, self.yL = (self.xC - 0.5*self.screen_right, self.yC)
+        self.xR, self.yR = (self.xC + 0.5*self.screen_right, self.yC)
+
+    def run(self, duration = 5, flash_rate_left = None, flash_rate_right = None, vsync_value = None):
         #white/black alterning for intermediate signals
         leftCB_cycle = itertools.cycle((self.CB1,self.CB2))
         rightCB_cycle = itertools.cycle((self.CB3,self.CB4))
+
+        if not flash_rate_left == None:
+            self.flash_rate_left = flash_rate_left
+        if not flash_rate_right == None:
+            self.flash_rate_right = flash_rate_right
 
         if vsync_value is None and not self.vsync_value is None:
             vsync_value = self.vsync_value
@@ -479,16 +488,15 @@ class DoubleCheckerBoardFlasher(Screen):
 
         is_running = True
 
-        xC, yC = (-0.5*self.board_width,-0.5*self.board_width)
-        xL, yL = (xC - 0.5*self.screen_right, yC)
-        xR, yR = (xC + 0.5*self.screen_right, yC)
+        xL, yL = self.xL, self.yL # (xC - 0.5*self.screen_right, yC)
+        xR, yR = self.xR, self.yR # (xC + 0.5*self.screen_right, yC)
 
         dtL = 1.0/self.flash_rate_left
         dtR = 1.0/self.flash_rate_right
         tL  = time.time() #time since last change
         tR  = time.time() #time since last change
         t0 = time.time()
-        t_list = []
+        #t_list = []
 
         while is_running:
             #prepare rendering model
