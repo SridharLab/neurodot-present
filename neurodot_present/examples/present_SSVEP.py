@@ -12,13 +12,14 @@ if __name__ == "__main__":
     import random
 
     pygame.init()
+    pygame.mouse.set_visible(False)
 
     FLASH_RATES  = [16,19,23] #Hz
     VSYNC_VALUES = [1,2,3]
     BLOCKS       = 3
     REPITITIONS  = 3
     CHECKERBOARD_NROWS = 64
-    FLASH_DURATION = 2       #seconds
+    FLASH_DURATION = 8       #seconds
     PAUSE_DURATION_RANGE = (2.0,5.0)
 
     FC = FixationCross()
@@ -34,7 +35,7 @@ if __name__ == "__main__":
             random.shuffle(stims)
             for flash_rate, vsync_value in stims:
                 CBF = CheckerBoardFlasher(flash_rate=flash_rate)
-                CBF.setup_checkerboard(nrows = CHECKERBOARD_NROWS)
+                CBF.setup_checkerboard(nrows = CHECKERBOARD_NROWS, show_fixation_dot = True)
                 CBF.run(duration = FLASH_DURATION, vsync_value = vsync_value)
                 SCR = Screen(color = "black", fixation_cross = FC)
                 pause_duration = random.uniform(*PAUSE_DURATION_RANGE)

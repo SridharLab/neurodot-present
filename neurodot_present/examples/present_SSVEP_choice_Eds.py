@@ -8,7 +8,9 @@ from neurodot_present.present_lib import Screen, FixationCross, DoubleCheckerBoa
 pl.DEBUG = False
 
 if __name__ == "__main__":
+
     pygame.init()
+    pygame.mouse.set_visible(False)
 
     FLASH_RATES_LEFT  = [3,19, 5] #[16,19,23] #Hz
     FLASH_RATES_RIGHT = [3, 5,19] #[11,27,17]
@@ -20,7 +22,7 @@ if __name__ == "__main__":
     PAUSE_DURATION_RANGE = (1.0,5.0)
 
     CBF = DoubleCheckerBoardFlasher()
-    CBF.setup_checkerboards(nrows = CHECKERBOARD_NROWS, width = 2.0 / 32.0)#width = 2.0 / 64.0)#width = 1.0/CHECKERBOARD_NROWS)
+    CBF.setup_checkerboards(nrows = CHECKERBOARD_NROWS, show_fixation_dot = False, width = 2.0 / 32.0)#width = 2.0 / 64.0)#width = 1.0/CHECKERBOARD_NROWS)
     text = TextDisplay(font_type = 'Arial.ttf', screen_bgColor = 'neutral-gray')
 
     FC_center = FixationCross(color = 'black')

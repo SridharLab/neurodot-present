@@ -310,7 +310,8 @@ class CheckerBoard:
                  width = 1.0,
                  height = None,
                  color1 = COLORS['white'],
-                 color2 = COLORS['black']
+                 color2 = COLORS['black'],
+                 show_fixation_dot = False
                  ):
         self.nrows = int(nrows)
         self.width = width
@@ -319,12 +320,15 @@ class CheckerBoard:
         self.height = height
         self.color1 = color1
         self.color2 = color2
+        self.show_fixation_dot = show_fixation_dot
 
     def render(self):
         w = self.width
         h = self.height
         color1 = self.color1
         color2 = self.color2
+        board_width = w * self.nrows
+        board_height = h * self.nrows
         gl.glDisable(gl.GL_LIGHTING)
         try:
             for x in range(0, self.nrows):
@@ -334,6 +338,12 @@ class CheckerBoard:
                     else:
                         gl.glColor3f(*color2)
                     gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
+
+            if self.show_fixation_dot:
+                gl.glColor3f(*COLORS['red'])
+                gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
+                glu.gluDisk(glu.gluNewQuadric(), 0, 0.01, 45, 1)
+
         finally:
             gl.glEnable(gl.GL_LIGHTING)
 
@@ -361,6 +371,7 @@ class CheckerBoardFlasher(Screen):
                            color1 = 'white',
                            color2 = 'black',
                            screen_bgColor = 'neutral-gray',
+                           show_fixation_dot = False,
                            vsync_value = None
                            ):
         #run colors through filter to catch names and convert to RGB
@@ -370,8 +381,8 @@ class CheckerBoardFlasher(Screen):
             width = 2.0/nrows #fill whole screen
         self.board_width = width*nrows
         self.nrows = nrows
-        self.CB1 = CheckerBoard(nrows,width, color1 = color1, color2 = color2)
-        self.CB2 = CheckerBoard(nrows,width, color1 = color2, color2 = color1) #reversed pattern
+        self.CB1 = CheckerBoard(nrows,width, color1 = color1, color2 = color2, show_fixation_dot = show_fixation_dot)
+        self.CB2 = CheckerBoard(nrows,width, color1 = color2, color2 = color1, show_fixation_dot = show_fixation_dot) #reversed pattern
         self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
 
@@ -441,6 +452,7 @@ class DoubleCheckerBoardFlasher(Screen):
                            color1 = 'white',
                            color2 = 'black',
                            screen_bgColor = 'neutral-gray',
+                           show_fixation_dot = False,
                            vsync_value = None,
                            flash_rate_left = None,
                            flash_rate_right = None,
@@ -452,10 +464,10 @@ class DoubleCheckerBoardFlasher(Screen):
         #     width = 2.0/nrows #fill whole screen
         self.board_width = width*nrows
         self.nrows = nrows
-        self.CB1 = CheckerBoard(nrows, width, color1 = color1, color2 = color2)
-        self.CB2 = CheckerBoard(nrows, width, color1 = color2, color2 = color1) #reversed pattern
-        self.CB3 = CheckerBoard(nrows, width, color1 = color1, color2 = color2)
-        self.CB4 = CheckerBoard(nrows, width, color1 = color2, color2 = color1) # reversed
+        self.CB1 = CheckerBoard(nrows, width, color1 = color1, color2 = color2, show_fixation_dot = show_fixation_dot)
+        self.CB2 = CheckerBoard(nrows, width, color1 = color2, color2 = color1, show_fixation_dot = show_fixation_dot) #reversed pattern
+        self.CB3 = CheckerBoard(nrows, width, color1 = color1, color2 = color2, show_fixation_dot = show_fixation_dot)
+        self.CB4 = CheckerBoard(nrows, width, color1 = color2, color2 = color1, show_fixation_dot = show_fixation_dot) # reversed
         self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
         if not flash_rate_left is None:
@@ -502,7 +514,7 @@ class DoubleCheckerBoardFlasher(Screen):
         tL  = time.time() #time since last change
         tR  = time.time() #time since last change
         t0 = time.time()
-        #t_list = []
+        # t_list = []
 
         while is_running:
             #prepare rendering model
@@ -533,7 +545,7 @@ class DoubleCheckerBoardFlasher(Screen):
             #show the scene
             pygame.display.flip()
 
-            #t_list.append(t)  #this is for measuring the loop delay
+            # t_list.append(t)  #this is for measuring the loop delay
 
             #handle outstanding events
             is_running = self.handle_events()
@@ -542,8 +554,8 @@ class DoubleCheckerBoardFlasher(Screen):
                 is_running = False
         #-----------------------------------------------------------------------
         #this is for measuring the loop delay
-        #import numpy as np
-        #print "mean loop dt:", np.array(np.diff(t_list).mean())
+        # import numpy as np
+        # print "mean loop dt:", np.array(np.diff(t_list).mean())
 
 class TextDisplay(Screen):
     def __init__(self,
