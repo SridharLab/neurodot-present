@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 import time
 import pygame
 import OpenGL.GL as gl
@@ -7,7 +9,8 @@ import numpy as np
 import itertools
 import fractions
 
-import resources
+from . import resources
+
 
 DEBUG = False
 
@@ -515,38 +518,37 @@ class DoubleCheckerBoardFlasher(Screen):
         tR  = time.time() #time since last change
         t0 = time.time()
         # t_list = []
-
-        while is_running:
+        
+        def render_routine():
             #prepare rendering model
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
+            #render the vsync patch
+            vsync_patch.render(value = vsync_value)
+            # translate to position of left board
+            gl.glTranslatef(xL, yL, 0.0)
+            leftCB.render()
+            # translate to position of right board
+            gl.glLoadIdentity()
+            gl.glTranslatef(xR, yR, 0.0)
+            rightCB.render()
+            #show the scene
+            pygame.display.flip()
 
+        while is_running:
             #get fresh time
             t = time.time()
             if t > (tL + dtL):
                 leftCB = leftCB_cycle.next()
                 tL  = t #update change time
+                render_routine()
             if t > (tR + dtR):
                 rightCB = rightCB_cycle.next()
                 tR  = t #update change time
-
-            # translate to position of left board
-            gl.glTranslatef(xL, yL, 0.0)
-            leftCB.render()
-
-            # translate to position of right board
-            gl.glLoadIdentity()
-            gl.glTranslatef(xR, yR, 0.0)
-            rightCB.render()
-
-            vsync_patch.render(value = vsync_value)
-
-            #show the scene
-            pygame.display.flip()
+                render_routine()
 
             # t_list.append(t)  #this is for measuring the loop delay
-
             #handle outstanding events
             is_running = self.handle_events()
             #print t, t0, duration
@@ -618,7 +620,7 @@ class TextDisplay(Screen):
             self.textSurface = self.font.render(text_content, 1, \
                 [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
                 [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
-            print "'", text_content, "' is too wide for screen; scaling to fit"
+            print("'", text_content, "' is too wide for screen; scaling to fit")
 
         if self.textSurface.get_height() > self.screen_height:
             percent_scale = float(self.screen_height) / self.textSurface.get_height()
@@ -626,7 +628,7 @@ class TextDisplay(Screen):
             self.textSurface = self.font.render(text_content, 1, \
                 [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
                 [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
-            print "'", text_content, "' is too tall for screen; scaling to fit"
+            print("'", text_content, "' is too tall for screen; scaling to fit")
 
         return self.textSurface
 
