@@ -13,6 +13,7 @@ if __name__ == "__main__":
     pygame.init()
     pygame.mouse.set_visible(True)
 
+    LOOP_MODE = 2  # 2 is using DoubleCheckerboardFlasher loop structure, 1 is using regular CheckerboardFlasher delay
     DURATION = 120
     flash_rate = 19  # Hz
 
@@ -28,7 +29,6 @@ if __name__ == "__main__":
     vvals_cycle = itertools.cycle((0, 15))
 
     try:
-        is_running = True
 
         vsync_value = vvals_cycle.next()
         CB = CB_cycle.next()
@@ -40,6 +40,7 @@ if __name__ == "__main__":
         t0 = time.time()
         # t_list = []
 
+        is_running = True
         while is_running:
             #prepare rendering model
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -48,7 +49,7 @@ if __name__ == "__main__":
 
             #get fresh time
             t = time.time()
-            if t > (tc + dtc):
+            if t > (tc + dtc) and LOOP_MODE == 2:
                 vsync_value = vvals_cycle.next()
                 CB = CB_cycle.next()
                 tc  = t #update change time
@@ -62,6 +63,11 @@ if __name__ == "__main__":
 
             #show the scene
             pygame.display.flip()
+
+            if LOOP_MODE == 1:
+                vsync_value = vvals_cycle.next()
+                CB = CB_cycle.next()
+                dt = scr.clock.tick_busy_loop(flash_rate)
 
             # t_list.append(t)  #this is for measuring the loop delay
 
