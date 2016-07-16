@@ -179,9 +179,9 @@ class AnimatedFixationCross(Sprite):
         self.position_current = position
         self.time_since_update = time  # set time_since_update to current time
 
-    def render(self, time):
+    def render(self, time = 0):
 
-        # if render() has not been run, set time_since_render so that methodwill run
+        # if render() has not been run, set time_since_render so that method will run
         if self.time_since_render == None:
             self.time_since_render = time + self.dt_threshold
 
@@ -427,6 +427,7 @@ class AnimatedScreen(Screen):
         for sprite in self.sprite_list:
             sprite.reset()
 
+        # get sprite duration times and set t0
         duration_list.append([sprite.movement_duration for sprite in self.sprite_list])
         t0 = time.time()
 
@@ -535,7 +536,7 @@ class CheckerBoard:
             if self.show_fixation_dot:
                 gl.glColor3f(*COLORS['red'])
                 gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
-                glu.gluDisk(glu.gluNewQuadric(), 0, 0.01, 45, 1)
+                glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
 
         finally:
             gl.glEnable(gl.GL_LIGHTING)
