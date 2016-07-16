@@ -8,6 +8,7 @@ import OpenGL.GLU as glu
 import numpy as np
 import itertools
 import fractions
+import copy
 
 from . import resources
 
@@ -102,6 +103,104 @@ class FixationCross:
         finally:
             gl.glEnable(gl.GL_LIGHTING)
 
+class Sprite:
+    def __init__(self):
+        pass
+
+    def update():
+        raise NotImplementedError("update method must be overridden in Sprite subclass")
+
+    def render():
+        raise NotImplementedError("render method must be overridden in Sprite subclass")
+
+class AnimatedFixationCross(Sprite):
+    def __init__(self,
+                 position_initial = [0,0],
+                 position_final = [0,0],
+                 movement_duration = 0,  # time to move from position_initial to position_final, seconds
+                 dt_threshold = 0.001,  # shortest allowed time between updates and between renders
+                 size      = 0.1,
+                 thickness = 0.01,
+                 color = 'white',
+                 ):
+        Sprite.__init__(self)
+        self.position_initial = position_initial
+        self.position_final = position_final
+        self.movement_duration = movement_duration
+        self.dt_threshold = dt_threshold
+        self.size = size
+        self.thickness = thickness
+        self.color = COLORS[color]
+
+        self.position_diff = np.array(np.subtract(position_final, position_initial)) # difference vector between initial and final positions
+        self.velocity = self.position_diff / movement_duration
+
+        self.reset()
+
+    # reset initial values
+    def reset(self):
+        self.position_current = copy.deepcopy(self.position_initial)
+        self.time_since_update = None
+        self.time_since_render = None
+        self.has_rendered = False # this keeps track of if render() has been called
+
+    # update render position (velocity is vector in OpenGL style coorinates/timestep)
+    def update(self, time = 0, velocity = None):
+        print(self.position_initial)
+
+        # if update() has not been run, set time_since_update to current time
+        if self.time_since_update == None:
+            self.time_since_update = time
+
+        # get length of time between this and last update() call
+        deltaT = time - self.time_since_update
+
+        # option to set different velocity value at update() call
+        if not velocity == None:
+            self.velocity = velocity
+
+        size = self.size
+        thickness = self.thickness
+        position = self.position_current
+        position[0] = position[0] + self.velocity[0] * deltaT
+        position[1] = position[1] + self.velocity[1] * deltaT
+
+        self.vertices = [#horizontal beam
+                         (position[0] - size/2.0, position[1] + thickness/2),  #left-top
+                         (position[0] - size/2.0, position[1] - thickness/2),  #left-bottom
+                         (position[0] + size/2.0, position[1] - thickness/2),  #right-bottom
+                         (position[0] + size/2.0, position[1] + thickness/2),  #right-top
+                         #vertical beam
+                         (position[0] - thickness/2, position[1] + size/2.0),  #left-top
+                         (position[0] - thickness/2, position[1] - size/2.0),  #left-bottom
+                         (position[0] + thickness/2, position[1] - size/2.0),  #right-bottom
+                         (position[0] + thickness/2, position[1] + size/2.0),  #right-top
+                         ]
+        self.position_current = position
+        self.time_since_update = time  # set time_since_update to current time
+
+    def render(self, time):
+
+        # if render() has not been run, set time_since_render so that methodwill run
+        if self.time_since_render == None:
+            self.time_since_render = time + self.dt_threshold
+
+        # only run update method if dt_threshold has been exceeded
+        if time - self.time_since_render >= self.dt_threshold:
+            gl.glLoadIdentity()
+            gl.glDisable(gl.GL_LIGHTING)
+            try:
+                gl.glBegin(gl.GL_QUADS)
+                gl.glColor3f(*self.color)
+                for v in self.vertices:
+                    gl.glVertex2f(*v)
+                gl.glEnd()
+            finally:
+                gl.glEnable(gl.GL_LIGHTING)
+
+            self.has_rendered = True
+            self.time_since_render = time
+
 class VsyncPatch:
     def __init__(self, left, bottom, width, height,
                  on_color  = COLORS['white'],
@@ -160,7 +259,6 @@ class VsyncPatch:
             gl.glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
         finally:
             gl.glEnable(gl.GL_LIGHTING)
-
 
 class Screen:
     def __init__(self,
@@ -284,6 +382,98 @@ class Screen:
                 if (event.key == pygame.K_ESCAPE) and (not mask_user_escape):
                     raise UserEscape
         return True
+
+class AnimatedScreen(Screen):
+    def __init__(self,
+                 color = "white",
+                 display_mode = None,
+                 vsync_patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
+                 vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
+                 constrain_aspect = True,
+                 **kwargs
+                 ):
+        Screen.__init__(self,
+                        color = color,
+                        display_mode = display_mode,
+                        constrain_aspect = constrain_aspect,
+                        vsync_patch_width  = vsync_patch_width,
+                        vsync_patch_height = vsync_patch_height,
+                       )
+        self.setup_AnimatedScreen(**kwargs)
+
+    # sprite_obj must inherit from Sprite
+    def setup_AnimatedScreen(self, sprite_list, screen_bgColor = "white", fixation_cross = None, vsync_value = 0):
+
+        self.fixation_cross = fixation_cross
+        self.vsync_value = vsync_value
+        self.vsync_value = vsync_value
+        self.screen_bgColor = COLORS[screen_bgColor]
+        self.sprite_list = sprite_list
+
+    def run(self,
+            duration = None,
+            vsync_value = 0,
+            wait_on_user_escape = False,
+            mask_user_escape = False,
+            ):
+
+        # duration param can be used to set a minimum run time (though sprites will not move after their movement duration is up)
+        if not duration == None:
+            duration_list = [duration]
+        else:
+            duration_list = []
+
+        # reset values to initials
+        for sprite in self.sprite_list:
+            sprite.reset()
+
+        duration_list.append([sprite.movement_duration for sprite in self.sprite_list])
+        t0 = time.time()
+
+        is_running = True
+        while is_running:
+            #get fresh time
+            t = time.time()
+
+            # call update() and render() for sprites, get render flags
+            render_flags = []
+            for sprite in self.sprite_list:
+                if t - t0 < sprite.movement_duration:
+                    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+                    gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+                    gl.glMatrixMode(gl.GL_MODELVIEW)
+                    gl.glLoadIdentity()
+
+                    sprite.update(time = t)  # update sprite's coordinates
+                    sprite.has_rendered = False # reset sprite's render flag
+                    sprite.render(time = t)  # attempt to render sprite
+                    render_flags.append(sprite.has_rendered) # get updated render flag
+
+            # render fixation cross if it exists
+            if not self.fixation_cross == None:
+                self.fixation_cross.render()
+
+            # render vsync patch
+            self.vsync_patch.render(value = vsync_value)
+
+            # flip display only if a sprite object has rendered
+            if any(render_flags):
+                pygame.display.flip()
+
+            # handle outstanding events
+            is_running = self.handle_events(mask_user_escape = mask_user_escape)
+
+            # check if it has been long enough for duration param or maximum sprite movement_duration
+            if t - t0 > max(duration_list)[0]:
+                is_running = False
+
+        if wait_on_user_escape:
+            is_waiting = True
+            try:
+                while is_waiting:
+                    is_waiting = self.handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
+            except UserEscape:
+                pass
 
 def run_start_sequence(fixation_cross = None):
     if fixation_cross is None:
@@ -518,7 +708,7 @@ class DoubleCheckerBoardFlasher(Screen):
         tR  = time.time() #time since last change
         t0 = time.time()
         # t_list = []
-        
+
         def render_routine():
             #prepare rendering model
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -557,7 +747,8 @@ class DoubleCheckerBoardFlasher(Screen):
         #-----------------------------------------------------------------------
         #this is for measuring the loop delay
         # import numpy as np
-        # print "mean loop dt:", np.array(np.diff(t_list).mean())
+        # print("mean loop dt:", np.array(np.diff(t_list).mean()))
+        # print("Frequency (Hz):", 1.0 / np.array(np.diff(t_list).mean()))
 
 class TextDisplay(Screen):
     def __init__(self,
