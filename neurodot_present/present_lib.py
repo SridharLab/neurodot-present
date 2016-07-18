@@ -107,6 +107,17 @@ class Sprite:
     def __init__(self):
         pass
 
+    # functions for converting between coordinate systems
+    def cart2pol(self, x, y):
+        r = np.sqrt(x**2 + y**2)
+        theta = np.arctan2(y, x)
+        return(r, theta)
+
+    def pol2cart(self, r, theta):
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+        return(x, y)
+
     def update():
         raise NotImplementedError("update method must be overridden in Sprite subclass")
 
@@ -115,15 +126,18 @@ class Sprite:
 
 class AnimatedFixationCross(Sprite):
     def __init__(self,
+                 use_polar_coords = False,
                  position_initial = [0,0],
-                 position_final = [0,0],
-                 movement_duration = 0,  # time to move from position_initial to position_final, seconds
+                 velocity = None,
+                 position_final = None,
+                 movement_duration = 1,  # time to move from position_initial to position_final, seconds
                  dt_threshold = 0.001,  # shortest allowed time between updates and between renders
                  size      = 0.1,
                  thickness = 0.01,
                  color = 'white',
                  ):
         Sprite.__init__(self)
+        self.use_polar_coords = use_polar_coords
         self.position_initial = position_initial
         self.position_final = position_final
         self.movement_duration = movement_duration
@@ -132,8 +146,16 @@ class AnimatedFixationCross(Sprite):
         self.thickness = thickness
         self.color = COLORS[color]
 
-        self.position_diff = np.array(np.subtract(position_final, position_initial)) # difference vector between initial and final positions
-        self.velocity = self.position_diff / movement_duration
+        # check if velocity was specified or if it must be calculated from initial and final positions
+        if not velocity == None:
+            self.velocity = velocity
+
+        elif not position_final == None:
+            self.position_diff = np.array(np.subtract(position_final, position_initial)) # difference vector between initial and final positions
+            self.velocity = self.position_diff / movement_duration
+
+        else:
+            raise AttributeError('Must specify either velocity or position_final of AnimatedFixationCross')
 
         self.reset()
 
@@ -163,6 +185,10 @@ class AnimatedFixationCross(Sprite):
         position = self.position_current
         position[0] = position[0] + self.velocity[0] * deltaT
         position[1] = position[1] + self.velocity[1] * deltaT
+        self.position_current = copy.deepcopy(position)
+
+        if self.use_polar_coords:
+            position[0], position[1] = self.pol2cart(position[0], position[1])
 
         self.vertices = [#horizontal beam
                          (position[0] - size/2.0, position[1] + thickness/2),  #left-top
@@ -175,7 +201,6 @@ class AnimatedFixationCross(Sprite):
                          (position[0] + thickness/2, position[1] - size/2.0),  #right-bottom
                          (position[0] + thickness/2, position[1] + size/2.0),  #right-top
                          ]
-        self.position_current = position
         self.time_since_update = time  # set time_since_update to current time
 
     def render(self, time = 0):
@@ -438,6 +463,8 @@ class AnimatedScreen(Screen):
             # clear screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+            gl.glMatrixMode(gl.GL_MODELVIEW)
+            gl.glLoadIdentity()
 
             # call update() and render() for sprites, get render flags
             render_flags = []

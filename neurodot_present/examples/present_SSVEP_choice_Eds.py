@@ -77,13 +77,13 @@ if __name__ == "__main__":
                     text_content = "R"
 
                 SCR_rest.run(duration = 1, vsync_value = 0)
-                #text.run(text_content = text_content, duration = 0.5)
 
-                pause_duration = random.uniform(*PAUSE_DURATION_RANGE)
-                #aSCR.run(duration = pause_duration)
+                #text.run(text_content = text_content, duration = 0.5)
+                #pause_duration = random.uniform(*PAUSE_DURATION_RANGE)
 
                 t0 = time.time()
-                aSCR_both.run(duration = 3)
+                #aSCR_both.run(duration = 3)
+                aSCR.run(duration = 3)
                 t1 = time.time()
                 print "Animation duration:", t1 - t0
 
