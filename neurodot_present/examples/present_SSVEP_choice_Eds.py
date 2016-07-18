@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import time
 
 import neurodot_present.present_lib as pl
 from neurodot_present.present_lib import Screen, FixationCross, DoubleCheckerBoardFlasher, UserEscape, run_start_sequence, run_stop_sequence, bell, TextDisplay, AnimatedFixationCross, AnimatedScreen
@@ -18,8 +19,9 @@ if __name__ == "__main__":
     BLOCKS       = 3
     REPITITIONS  = 3
     CHECKERBOARD_NROWS = 16
+    MOVEMENT_DURATION = 0.5
     FLASH_DURATION = 10       #seconds
-    PAUSE_DURATION_RANGE = (1.0,2.0)
+    PAUSE_DURATION_RANGE = (3.0,4.0)
 
     CBF = DoubleCheckerBoardFlasher()
     CBF.setup_checkerboards(nrows = CHECKERBOARD_NROWS, show_fixation_dot = True, width = 2.0 / 32.0)#width = 2.0 / 64.0)#width = 1.0/CHECKERBOARD_NROWS)
@@ -30,13 +32,13 @@ if __name__ == "__main__":
     FC_right = FixationCross(color = 'black', position = (CBF.xR + 0.5*CBF.board_width, 0.0))
     aFC_left = AnimatedFixationCross(position_initial = [0,0],
                                      position_final = [CBF.xL + 0.5*CBF.board_width, 0.0],
-                                     movement_duration = 0.5,
+                                     movement_duration = MOVEMENT_DURATION,
                                      color = 'black',
                                      dt_threshold = 0.0005,
                                      )
     aFC_right = AnimatedFixationCross(position_initial = [0,0],
                                       position_final = [CBF.xR + 0.5*CBF.board_width, 0.0],
-                                      movement_duration = 0.5,
+                                      movement_duration = MOVEMENT_DURATION,
                                       color = 'black',
                                       dt_threshold = 0.0005,
                                       )
@@ -46,6 +48,7 @@ if __name__ == "__main__":
     SCR_right = Screen(color = 'neutral-gray', fixation_cross = FC_right)
     aSCR_left = AnimatedScreen(screen_bgColor = 'neutral-gray', sprite_list = [aFC_left])
     aSCR_right = AnimatedScreen(screen_bgColor = 'neutral-gray', sprite_list = [aFC_right])
+    aSCR_both = AnimatedScreen(screen_bgColor = 'neutral-gray', sprite_list = [aFC_left, aFC_right])
 
     stimAttrs = zip(FLASH_RATES_LEFT, FLASH_RATES_RIGHT, VSYNC_VALUES)
 
@@ -73,13 +76,19 @@ if __name__ == "__main__":
                     vsync_vals = [v + len(base_vsync_vals) for v in base_vsync_vals]  # modify vsync values to show we are looking right
                     text_content = "R"
 
-                SCR_rest.run(duration = 2, vsync_value = 0)
+                SCR_rest.run(duration = 1, vsync_value = 0)
                 #text.run(text_content = text_content, duration = 0.5)
 
-                aSCR.run()
                 pause_duration = random.uniform(*PAUSE_DURATION_RANGE)
-                SCR.run(duration = pause_duration, vsync_value = 0)
+                #aSCR.run(duration = pause_duration)
+
+                t0 = time.time()
+                aSCR_both.run(duration = 3)
+                t1 = time.time()
+                print "Animation duration:", t1 - t0
+
                 CBF.run(duration = FLASH_DURATION, flash_rate_left = FRs_left[r], flash_rate_right = FRs_right[r], vsync_value = vsync_vals[r])
+                print "Stimulus duration:", time.time() - t1
 
             BLOCKS -= 1
             if not BLOCKS == 0:

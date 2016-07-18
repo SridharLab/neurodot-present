@@ -146,7 +146,6 @@ class AnimatedFixationCross(Sprite):
 
     # update render position (velocity is vector in OpenGL style coorinates/timestep)
     def update(self, time = 0, velocity = None):
-        print(self.position_initial)
 
         # if update() has not been run, set time_since_update to current time
         if self.time_since_update == None:
@@ -428,7 +427,7 @@ class AnimatedScreen(Screen):
             sprite.reset()
 
         # get sprite duration times and set t0
-        duration_list.append([sprite.movement_duration for sprite in self.sprite_list])
+        duration_list += [sprite.movement_duration for sprite in self.sprite_list]
         t0 = time.time()
 
         is_running = True
@@ -436,17 +435,18 @@ class AnimatedScreen(Screen):
             #get fresh time
             t = time.time()
 
+            # clear screen
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+
             # call update() and render() for sprites, get render flags
             render_flags = []
             for sprite in self.sprite_list:
+
+                sprite.has_rendered = False # reset sprite's render flag
                 if t - t0 < sprite.movement_duration:
-                    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-                    gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
-                    gl.glMatrixMode(gl.GL_MODELVIEW)
-                    gl.glLoadIdentity()
 
                     sprite.update(time = t)  # update sprite's coordinates
-                    sprite.has_rendered = False # reset sprite's render flag
                     sprite.render(time = t)  # attempt to render sprite
                     render_flags.append(sprite.has_rendered) # get updated render flag
 
@@ -454,18 +454,17 @@ class AnimatedScreen(Screen):
             if not self.fixation_cross == None:
                 self.fixation_cross.render()
 
-            # render vsync patch
-            self.vsync_patch.render(value = vsync_value)
-
             # flip display only if a sprite object has rendered
             if any(render_flags):
+                # render vsync patch
+                self.vsync_patch.render(value = vsync_value)
                 pygame.display.flip()
 
             # handle outstanding events
             is_running = self.handle_events(mask_user_escape = mask_user_escape)
 
             # check if it has been long enough for duration param or maximum sprite movement_duration
-            if t - t0 > max(duration_list)[0]:
+            if t - t0 > max(duration_list):
                 is_running = False
 
         if wait_on_user_escape:
