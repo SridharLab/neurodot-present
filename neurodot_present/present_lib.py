@@ -459,6 +459,7 @@ class DoubleCheckerBoardFlasher(Screen):
                            vsync_value = None,
                            flash_rate_left = None,
                            flash_rate_right = None,
+                           rate_compensation = None,
                            ):
         #run colors through filter to catch names and convert to RGB
         color1 = COLORS.get(color1, color1)
@@ -477,6 +478,8 @@ class DoubleCheckerBoardFlasher(Screen):
             self.flash_rate_left  = flash_rate_left
         if not flash_rate_right is None:
             self.flash_rate_right = flash_rate_right
+        
+        self.rate_compensation = rate_compensation
 
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
         self.xL, self.yL = (self.xC - 0.5*self.screen_right, self.yC)
@@ -487,10 +490,15 @@ class DoubleCheckerBoardFlasher(Screen):
         leftCB_cycle = itertools.cycle((self.CB1,self.CB2))
         rightCB_cycle = itertools.cycle((self.CB3,self.CB4))
 
-        if not flash_rate_left == None:
-            self.flash_rate_left = flash_rate_left
-        if not flash_rate_right == None:
-            self.flash_rate_right = flash_rate_right
+        if flash_rate_left is None:
+            flash_rate_left = self.flash_rate_left
+        if flash_rate_right is None:
+            flash_rate_right = self.flash_rate_right
+            
+        #apply compenstation if specified
+        if not self.rate_compensation is None:
+            flash_rate_left  += self.rate_compensation
+            flash_rate_right += self.rate_compensation
 
         if vsync_value is None and not self.vsync_value is None:
             vsync_value = self.vsync_value
@@ -512,11 +520,11 @@ class DoubleCheckerBoardFlasher(Screen):
         xL, yL = self.xL, self.yL # (xC - 0.5*self.screen_right, yC)
         xR, yR = self.xR, self.yR # (xC + 0.5*self.screen_right, yC)
 
-        dtL = 1.0/self.flash_rate_left
-        dtR = 1.0/self.flash_rate_right
+        dtL = 1.0/flash_rate_left
+        dtR = 1.0/flash_rate_right
         tL  = time.time() #time since last change
         tR  = time.time() #time since last change
-        t0 = time.time()
+        t0  = time.time()
         # t_list = []
         
         def render_routine():
