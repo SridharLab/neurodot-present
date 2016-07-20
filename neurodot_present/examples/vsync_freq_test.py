@@ -14,7 +14,7 @@ if __name__ == "__main__":
     pygame.mouse.set_visible(True)
 
     LOOP_MODE = 2  # 2 is using DoubleCheckerboardFlasher loop structure, 1 is using regular CheckerboardFlasher delay
-    DURATION = 120
+    DURATION = 10
     flash_rate = 19  # Hz
 
     scr = Screen()
@@ -38,21 +38,13 @@ if __name__ == "__main__":
         dtc = 1.0/flash_rate
         tc  = time.time() #time since last change
         t0 = time.time()
-        # t_list = []
+        t_list = []
 
-        is_running = True
-        while is_running:
+        def render_routine():
             #prepare rendering model
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
-
-            #get fresh time
-            t = time.time()
-            if t > (tc + dtc) and LOOP_MODE == 2:
-                vsync_value = vvals_cycle.next()
-                CB = CB_cycle.next()
-                tc  = t #update change time
 
             # render vsync patch
             vsync_patch.render(value = vsync_value)
@@ -64,12 +56,23 @@ if __name__ == "__main__":
             #show the scene
             pygame.display.flip()
 
+        is_running = True
+        while is_running:
+
+            t = time.time()
+            if t > (tc + dtc) and LOOP_MODE == 2:
+                vsync_value = vvals_cycle.next()
+                CB = CB_cycle.next()
+                tc  = t #update change time
+                render_routine()
+                t_list.append(t)  #this is for measuring the loop delay
+
             if LOOP_MODE == 1:
                 vsync_value = vvals_cycle.next()
                 CB = CB_cycle.next()
                 dt = scr.clock.tick_busy_loop(flash_rate)
-
-            # t_list.append(t)  #this is for measuring the loop delay
+                render_routine()
+            #dt = scr.clock.tick_busy_loop(1000)
 
             #handle outstanding events
             is_running = scr.handle_events()
@@ -78,8 +81,9 @@ if __name__ == "__main__":
                 is_running = False
         #-----------------------------------------------------------------------
         #this is for measuring the loop delay
-        # import numpy as np
-        # print "mean loop dt:", np.array(np.diff(t_list).mean())
+        import numpy as np
+        print "Mean loop dt:  ", np.array(np.diff(t_list).mean())
+        print "Frequency (Hz):", 1.0 / np.array(np.diff(t_list).mean())
 
     except UserEscape as exc:
         print exc
