@@ -680,6 +680,7 @@ class DoubleCheckerBoardFlasher(Screen):
                  vsync_patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
                  vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
                  constrain_aspect = True,
+                 flash_rate_util = None,
                  ):
         Screen.__init__(self,
                         color = "black",
@@ -690,6 +691,14 @@ class DoubleCheckerBoardFlasher(Screen):
                        )
         self.flash_rate_left  = flash_rate_left
         self.flash_rate_right = flash_rate_right
+
+        # check if util_flash_rate was specified: if so, single-check checkerboard will be displayed in center for verifying
+        # frequency with vysnc device
+        if not flash_rate_util == None:
+            self.show_vsync_freq_util = True
+            self.flash_rate_util = flash_rate_util
+        else:
+            self.show_vsync_freq_util = False
 
     def setup_checkerboards(self,
                            nrows,
@@ -706,14 +715,24 @@ class DoubleCheckerBoardFlasher(Screen):
         #run colors through filter to catch names and convert to RGB
         color1 = COLORS.get(color1, color1)
         color2 = COLORS.get(color2, color2)
+
         # if width is None:
         #     width = 2.0/nrows #fill whole screen
         self.board_width = width*nrows
         self.nrows = nrows
+
+        # create checkerboard objects
         self.CB1 = CheckerBoard(nrows, width, color1 = color1, color2 = color2, show_fixation_dot = show_fixation_dot)
         self.CB2 = CheckerBoard(nrows, width, color1 = color2, color2 = color1, show_fixation_dot = show_fixation_dot) #reversed pattern
         self.CB3 = CheckerBoard(nrows, width, color1 = color1, color2 = color2, show_fixation_dot = show_fixation_dot)
         self.CB4 = CheckerBoard(nrows, width, color1 = color2, color2 = color1, show_fixation_dot = show_fixation_dot) # reversed
+
+        # create frequency test utility checkerboard objects if needed
+        if self.show_vsync_freq_util:
+            self.utilCB1 = CheckerBoard(1, self.board_width, color1 = color1, color2 = color2)
+            self.utilCB2 = CheckerBoard(1, self.board_width, color1 = color2, color2 = color1)
+
+        # setup some values
         self.screen_bgColor = COLORS[screen_bgColor]
         self.vsync_value = vsync_value
         if not flash_rate_left is None:
@@ -723,15 +742,24 @@ class DoubleCheckerBoardFlasher(Screen):
 
         self.rate_compensation = rate_compensation
 
+        # setup coordinate values for two checkerboards
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
         self.xL, self.yL = (self.xC - 0.5*self.screen_right, self.yC)
         self.xR, self.yR = (self.xC + 0.5*self.screen_right, self.yC)
 
     def run(self, duration = 5, flash_rate_left = None, flash_rate_right = None, vsync_value = None):
+        # do things for utility checkerboard if needed
+        if self.show_vsync_freq_util:
+            utilCB_cycle = itertools.cycle((self.utilCB1,self.utilCB2))
+            utilCB = utilCB_cycle.next()
+            dtUtil = 1.0 / self.flash_rate_util
+            tU = time.time()
+
         #white/black alterning for intermediate signals
         leftCB_cycle = itertools.cycle((self.CB1,self.CB2))
         rightCB_cycle = itertools.cycle((self.CB3,self.CB4))
 
+        # get flash rates if not specified
         if flash_rate_left is None:
             flash_rate_left = self.flash_rate_left
         if flash_rate_right is None:
@@ -742,6 +770,7 @@ class DoubleCheckerBoardFlasher(Screen):
             flash_rate_left  += self.rate_compensation
             flash_rate_right += self.rate_compensation
 
+        # get vysnc value
         if vsync_value is None and not self.vsync_value is None:
             vsync_value = self.vsync_value
         elif vsync_value is None:
@@ -750,12 +779,10 @@ class DoubleCheckerBoardFlasher(Screen):
         #set background color
         gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
 
-
+        # get particular vsync patch and leftCB/rightCB objects
         vsync_patch = self.vsync_patch
-
         leftCB = leftCB_cycle.next()
         rightCB = rightCB_cycle.next()
-
 
         is_running = True
 
@@ -774,15 +801,25 @@ class DoubleCheckerBoardFlasher(Screen):
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
+
             #render the vsync patch
             vsync_patch.render(value = vsync_value)
+
             # translate to position of left board
             gl.glTranslatef(xL, yL, 0.0)
             leftCB.render()
+
             # translate to position of right board
             gl.glLoadIdentity()
             gl.glTranslatef(xR, yR, 0.0)
             rightCB.render()
+
+            # render utility checkerboard if needed
+            if self.show_vsync_freq_util:
+                gl.glLoadIdentity()
+                gl.glTranslatef(- self.board_width / 2.0, - self.board_width / 2.0, 0.0)
+                utilCB.render()
+
             #show the scene
             pygame.display.flip()
 
@@ -796,6 +833,12 @@ class DoubleCheckerBoardFlasher(Screen):
             if t > (tR + dtR):
                 rightCB = rightCB_cycle.next()
                 tR  = t #update change time
+                render_routine()
+
+            # render check for utility checkerboard
+            if self.show_vsync_freq_util and t > (tU + dtUtil):
+                utilCB = utilCB_cycle.next()
+                tU = t # update change time
                 render_routine()
 
             # t_list.append(t)  #this is for measuring the loop delay
