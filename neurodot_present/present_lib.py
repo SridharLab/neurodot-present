@@ -824,21 +824,26 @@ class DoubleCheckerBoardFlasher(Screen):
             pygame.display.flip()
 
         while is_running:
+            run_render_routine = False
+
             #get fresh time
             t = time.time()
             if t > (tL + dtL):
                 leftCB = leftCB_cycle.next()
                 tL  = t #update change time
-                render_routine()
+                run_render_routine = True
             if t > (tR + dtR):
                 rightCB = rightCB_cycle.next()
                 tR  = t #update change time
-                render_routine()
+                run_render_routine = True
 
             # render check for utility checkerboard
             if self.show_vsync_freq_util and t > (tU + dtUtil):
                 utilCB = utilCB_cycle.next()
                 tU = t # update change time
+                run_render_routine = True
+
+            if run_render_routine:
                 render_routine()
 
             # t_list.append(t)  #this is for measuring the loop delay
