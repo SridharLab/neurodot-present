@@ -582,13 +582,14 @@ class CheckerBoard:
                 pass
                 #gl.glEnable(gl.GL_LIGHTING)
             gl.glEndList()  # end OpenGL list
+            self.has_rendered = True
 
         # display checkerboard
         gl.glDisable(gl.GL_LIGHTING)
         gl.glCallList(self.glListIndex)
         gl.glEnable(gl.GL_LIGHTING)
 
-    def delete_glList(self):
+    def __del__(self):
         gl.glDeleteLists(self.glListIndex, 1)
 
 class CheckerBoardFlasher(Screen):
@@ -803,10 +804,6 @@ class DoubleCheckerBoardFlasher(Screen):
             #print t, t0, duration
             if t - t0 > duration:
                 is_running = False
-
-        # delete OpenGL lists created by checkerboards
-        for checkerboard in [self.CB1, self.CB2, self.CB3, self.CB4]:
-            checkerboard.delete_glList()
 
         #-----------------------------------------------------------------------
         #this is for measuring the loop delay
