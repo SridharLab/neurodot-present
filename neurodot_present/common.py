@@ -88,3 +88,5 @@ class Sprite:
 
     def render():
         raise NotImplementedError("render method must be overridden in Sprite subclass")
+        
+

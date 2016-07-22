@@ -10,24 +10,24 @@ from common import COLORS
 class CheckerBoard:
     def __init__(self,
                  nrows,
-                 width = 1.0,
-                 height = None,
+                 check_width = 1.0,
+                 check_height = None,
                  color1 = COLORS['white'],
                  color2 = COLORS['black'],
                  show_fixation_dot = False
                  ):
         self.nrows = int(nrows)
-        self.width = width
-        if height is None:
-            height = width
-        self.height = height
+        self.check_width = check_width
+        if check_height is None:
+            check_height = check_width
+        self.check_height = check_height
         self.color1 = color1
         self.color2 = color2
         self.show_fixation_dot = show_fixation_dot
 
     def render(self):
-        w = self.width
-        h = self.height
+        w = self.check_width
+        h = self.check_height
         color1 = self.color1
         color2 = self.color2
         board_width = w * self.nrows

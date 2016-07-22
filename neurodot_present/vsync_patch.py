@@ -6,7 +6,7 @@ import OpenGL.GL as gl
 
 
 #local imports
-from common import DEBUG, COLORS
+from common import DEBUG, COLORS, VSYNC_PATCH_HEIGHT_DEFAULT, VSYNC_PATCH_WIDTH_DEFAULT
 
 
 class VsyncPatch:
@@ -67,3 +67,17 @@ class VsyncPatch:
             gl.glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
         finally:
             gl.glEnable(gl.GL_LIGHTING)
+    @classmethod
+    #define the vsync patch as being in the bottom right corner
+    def make_bottom_right(cls,
+                          screen_bottom,
+                          screen_right,
+                          patch_width  = VSYNC_PATCH_WIDTH_DEFAULT,
+                          patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
+                         ):
+        obj = cls(left   = screen_right - patch_width,
+                  bottom = screen_bottom,
+                  width  = patch_width,
+                  height = patch_height
+                 )
+        return obj
