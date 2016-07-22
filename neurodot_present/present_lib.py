@@ -316,6 +316,7 @@ class Screen:
                                                        | pygame.DOUBLEBUF
                                                        | pygame.HWSURFACE
                                                        | fullscreen_flag_value,
+                                                       #| pygame.NOFRAME
                                                        #8 #bits per pixel
                                                       )
         self.display_mode = display_mode
@@ -546,30 +547,49 @@ class CheckerBoard:
         self.color2 = color2
         self.show_fixation_dot = show_fixation_dot
 
+        # flag for checking if render method has been called (and OpenGl display list created)
+        self.has_rendered = False
+
     def render(self):
-        w = self.width
-        h = self.height
-        color1 = self.color1
-        color2 = self.color2
-        board_width = w * self.nrows
-        board_height = h * self.nrows
+
+        # create openGL list if render has not yet been called
+        if not self.has_rendered:
+            w = self.width
+            h = self.height
+            color1 = self.color1
+            color2 = self.color2
+            board_width = w * self.nrows
+            board_height = h * self.nrows
+            #gl.glDisable(gl.GL_LIGHTING)
+
+            self.glListIndex = gl.glGenLists(1)
+            gl.glNewList(self.glListIndex, gl.GL_COMPILE) # begin OpengGL list
+            try:
+                for x in range(0, self.nrows):
+                    for y in range(0, self.nrows):
+                        if (x + y) % 2 == 0:
+                            gl.glColor3f(*color1)
+                        else:
+                            gl.glColor3f(*color2)
+                        gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
+
+                if self.show_fixation_dot:
+                    gl.glColor3f(*COLORS['red'])
+                    gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
+                    glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
+
+            finally:
+                pass
+                #gl.glEnable(gl.GL_LIGHTING)
+            gl.glEndList()  # end OpenGL list
+
+        # display checkerboard
         gl.glDisable(gl.GL_LIGHTING)
-        try:
-            for x in range(0, self.nrows):
-                for y in range(0, self.nrows):
-                    if (x + y) % 2 == 0:
-                        gl.glColor3f(*color1)
-                    else:
-                        gl.glColor3f(*color2)
-                    gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
+        gl.glCallList(self.glListIndex)
+        gl.glEnable(gl.GL_LIGHTING)
 
-            if self.show_fixation_dot:
-                gl.glColor3f(*COLORS['red'])
-                gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
-                glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
-
-        finally:
-            gl.glEnable(gl.GL_LIGHTING)
+    def delete_glList(self):
+        gl.glDeleteLists(self.glListIndex, 1)
 
 class CheckerBoardFlasher(Screen):
     def __init__(self,
@@ -783,6 +803,11 @@ class DoubleCheckerBoardFlasher(Screen):
             #print t, t0, duration
             if t - t0 > duration:
                 is_running = False
+
+        # delete OpenGL lists created by checkerboards
+        for checkerboard in [self.CB1, self.CB2, self.CB3, self.CB4]:
+            checkerboard.delete_glList()
+
         #-----------------------------------------------------------------------
         #this is for measuring the loop delay
         # import numpy as np
