@@ -310,12 +310,16 @@ class Screen:
         fullscreen_flag_value = pygame.FULLSCREEN
         if DEBUG:  #do in window while debugging
             fullscreen_flag_value = 0
+        #print("Before set_mode")
         self.display_surface = pygame.display.set_mode(display_mode,
                                                        pygame.OPENGL
                                                        | pygame.DOUBLEBUF
                                                        | pygame.HWSURFACE
-                                                       | fullscreen_flag_value
+                                                       | fullscreen_flag_value,
+                                                       #8 #bits per pixel
                                                       )
+        self.display_mode = display_mode
+        #print("After set_mode")
         #configure the display perspective
         # Fill the entire graphics window!
         gl.glViewport(0, 0, w, h)
@@ -502,12 +506,12 @@ class AnimatedScreen(Screen):
             except UserEscape:
                 pass
 
-def run_start_sequence(fixation_cross = None):
+def run_start_sequence(fixation_cross = None, **kwargs):
     if fixation_cross is None:
         fixation_cross = FixationCross()
     #instantiate screens
-    black_SCR = Screen(color = "black",fixation_cross = fixation_cross)
-    green_SCR = Screen(color = "green",fixation_cross = fixation_cross)
+    black_SCR = Screen(color = "black",fixation_cross = fixation_cross, **kwargs)
+    green_SCR = Screen(color = "green",fixation_cross = fixation_cross, **kwargs)
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
     green_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)  #begins the start frame
@@ -515,10 +519,10 @@ def run_start_sequence(fixation_cross = None):
     black_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
 
-def run_stop_sequence(fixation_cross = None):
+def run_stop_sequence(fixation_cross = None, **kwargs):
     #instantiate screens
-    black_SCR = Screen(color = "black", fixation_cross = fixation_cross)
-    red_SCR = Screen(color = "red", fixation_cross = fixation_cross)
+    black_SCR = Screen(color = "black", fixation_cross = fixation_cross, **kwargs)
+    red_SCR = Screen(color = "red", fixation_cross = fixation_cross, **kwargs)
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
@@ -695,7 +699,7 @@ class DoubleCheckerBoardFlasher(Screen):
             self.flash_rate_left  = flash_rate_left
         if not flash_rate_right is None:
             self.flash_rate_right = flash_rate_right
-        
+
         self.rate_compensation = rate_compensation
 
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
@@ -711,7 +715,7 @@ class DoubleCheckerBoardFlasher(Screen):
             flash_rate_left = self.flash_rate_left
         if flash_rate_right is None:
             flash_rate_right = self.flash_rate_right
-            
+
         #apply compenstation if specified
         if not self.rate_compensation is None:
             flash_rate_left  += self.rate_compensation
