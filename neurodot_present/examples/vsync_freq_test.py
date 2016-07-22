@@ -14,10 +14,11 @@ if __name__ == "__main__":
     pygame.mouse.set_visible(True)
 
     LOOP_MODE = 2  # 2 is using DoubleCheckerboardFlasher loop structure, 1 is using regular CheckerboardFlasher delay
-    DURATION = 10
+    DURATION = 20
     flash_rate = 19  # Hz
+    display_mode = pygame.display.list_modes()[-1]
 
-    scr = Screen()
+    scr = Screen(display_mode = display_mode)
     vsync_patch = VsyncPatch(left   = scr.screen_right - pl.VSYNC_PATCH_WIDTH_DEFAULT,
                                       bottom = scr.screen_bottom,
                                       width  = pl.VSYNC_PATCH_WIDTH_DEFAULT,
