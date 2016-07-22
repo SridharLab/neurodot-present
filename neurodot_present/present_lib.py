@@ -695,7 +695,7 @@ class DoubleCheckerBoardFlasher(Screen):
             self.flash_rate_left  = flash_rate_left
         if not flash_rate_right is None:
             self.flash_rate_right = flash_rate_right
-        
+
         self.rate_compensation = rate_compensation
 
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
@@ -711,7 +711,7 @@ class DoubleCheckerBoardFlasher(Screen):
             flash_rate_left = self.flash_rate_left
         if flash_rate_right is None:
             flash_rate_right = self.flash_rate_right
-            
+
         #apply compenstation if specified
         if not self.rate_compensation is None:
             flash_rate_left  += self.rate_compensation
@@ -846,7 +846,7 @@ class TextDisplay(Screen):
             self.textSurface = self.font.render(text_content, 1, \
                 [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
                 [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
-            print("'", text_content, "' is too wide for screen; scaling to fit")
+            print("WARNING (TextDisplay): '", text_content, "' is too wide for screen; scaling to fit")
 
         if self.textSurface.get_height() > self.screen_height:
             percent_scale = float(self.screen_height) / self.textSurface.get_height()
@@ -854,7 +854,7 @@ class TextDisplay(Screen):
             self.textSurface = self.font.render(text_content, 1, \
                 [int(self.text_color[0]*255), int(self.text_color[1]*255), int(self.text_color[2]*255)], \
                 [int(self.text_bgColor[0]*255), int(self.text_bgColor[1]*255), int(self.text_bgColor[2]*255)])
-            print("'", text_content, "' is too tall for screen; scaling to fit")
+            print("WARNING (TextDisplay): '", text_content, "' is too tall for screen; scaling to fit")
 
         return self.textSurface
 
