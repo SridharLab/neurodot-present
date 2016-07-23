@@ -83,6 +83,7 @@ class Screen:
         
     def setup(self,
               background_color = "black",
+              vsync_value  = None,
               vsync_patch  = "bottom-right",
               fixation_cross = None,
              ):
@@ -99,6 +100,7 @@ class Screen:
         r,g,b = self.background_color
         gl.glClearColor(r,g,b,1.0)
         
+        self.vsync_value = vsync_value
         if vsync_patch == "bottom-right":
             #define the vsync patch as being in the bottom right corner
             self.vsync_patch = VsyncPatch.make_bottom_right(screen_bottom = self.screen_bottom,

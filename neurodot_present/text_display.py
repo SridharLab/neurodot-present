@@ -106,5 +106,4 @@ if __name__ == "__main__":
              font_type = "FreeMono.ttf",
              screen_background_color = "white",
             )
-    TD.run(duration = 5)
-            
+    TD.run(duration = 5, vsync_value = 10)
