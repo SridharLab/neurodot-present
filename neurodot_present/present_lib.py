@@ -590,7 +590,12 @@ class CheckerBoard:
         gl.glEnable(gl.GL_LIGHTING)
 
     def __del__(self):
-        gl.glDeleteLists(self.glListIndex, 1)
+        # __del__ gets called sometimes when render() hasn't yet been run and the OpenGL list doesn't yet exist
+
+        try:
+            gl.glDeleteLists(self.glListIndex, 1)
+        except AttributeError:
+            pass
 
 class CheckerBoardFlasher(Screen):
     def __init__(self,
@@ -753,7 +758,6 @@ class DoubleCheckerBoardFlasher(Screen):
             utilCB_cycle = itertools.cycle((self.utilCB1,self.utilCB2))
             utilCB = utilCB_cycle.next()
             dtUtil = 1.0 / self.flash_rate_util
-            tU = time.time()
 
         #white/black alterning for intermediate signals
         leftCB_cycle = itertools.cycle((self.CB1,self.CB2))
@@ -794,7 +798,8 @@ class DoubleCheckerBoardFlasher(Screen):
         tL  = time.time() #time since last change
         tR  = time.time() #time since last change
         t0  = time.time()
-        # t_list = []
+        tU = time.time()  # time since last change (Utility patch)
+        t_list = []
 
         def render_routine():
             #prepare rendering model
@@ -823,30 +828,38 @@ class DoubleCheckerBoardFlasher(Screen):
             #show the scene
             pygame.display.flip()
 
+        numrendersLeft = 0
+        numrendersRight = 0
+        numrendersUtil = 0
+
         while is_running:
             run_render_routine = False
 
             #get fresh time
             t = time.time()
             if t > (tL + dtL):
+                numrendersLeft += 1
                 leftCB = leftCB_cycle.next()
                 tL  = t #update change time
                 run_render_routine = True
+
             if t > (tR + dtR):
+                numrendersRight += 1
                 rightCB = rightCB_cycle.next()
                 tR  = t #update change time
                 run_render_routine = True
 
             # render check for utility checkerboard
             if self.show_vsync_freq_util and t > (tU + dtUtil):
+                numrendersUtil += 1
                 utilCB = utilCB_cycle.next()
                 tU = t # update change time
                 run_render_routine = True
 
             if run_render_routine:
                 render_routine()
+                t_list.append(t)  #this is for measuring the loop delay
 
-            # t_list.append(t)  #this is for measuring the loop delay
             #handle outstanding events
             is_running = self.handle_events()
             #print t, t0, duration
@@ -855,9 +868,35 @@ class DoubleCheckerBoardFlasher(Screen):
 
         #-----------------------------------------------------------------------
         #this is for measuring the loop delay
-        # import numpy as np
-        # print("mean loop dt:", np.array(np.diff(t_list).mean()))
-        # print("Frequency (Hz):", 1.0 / np.array(np.diff(t_list).mean()))
+        import numpy as np
+        print("mean loop dt:", np.array(np.diff(t_list).mean()))
+        print("Frequency (Hz):", 1.0 / np.array(np.diff(t_list).mean()))
+
+        # get histogram values
+        bins = [0]
+        bins += range(16, 41)
+        bins += [1000000]
+        freq_list = 1.0 / np.diff(t_list)
+        binVals, bins = np.histogram(freq_list, bins)
+
+        # format histogram output
+        titleStr = "Bin: "
+        valueStr = "n:   "
+        for b in bins[1:len(bins)]:
+            titleStr += "{:>8}".format(b)
+        for n in binVals:
+            valueStr += "{:>8}".format(n)
+
+        # print stuff
+        print("Frequency list:")
+        print(freq_list)
+        print()
+        print("Histogram values:")
+        print(titleStr)
+        print(valueStr)
+        # print("Left rendered: ", numrendersLeft)
+        # print("Right rendered:", numrendersRight)
+        # print("Util rendered: ", numrendersUtil)
 
 class TextDisplay(Screen):
     def __init__(self,
