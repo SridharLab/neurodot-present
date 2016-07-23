@@ -82,7 +82,7 @@ class Screen:
         self.run_mode = run_mode
         
     def setup(self,
-              color = "black",
+              background_color = "black",
               vsync_patch  = "bottom-right",
               fixation_cross = None,
              ):
@@ -95,8 +95,8 @@ class Screen:
         #project to a 2D perspective
         glu.gluOrtho2D(self.screen_left, self.screen_right, self.screen_bottom, self.screen_top)
         
-        self.color = COLORS.get(color, color)
-        r,g,b = self.color
+        self.background_color = COLORS.get(background_color, background_color)
+        r,g,b = self.background_color
         gl.glClearColor(r,g,b,1.0)
         
         if vsync_patch == "bottom-right":
@@ -148,11 +148,12 @@ class Screen:
                            ):
         import pygame
 
+        #error check any passed vsync_values
         if not vsync_value is None:
             vsync_value = int(vsync_value)
             assert( 0 <= vsync_value <= 16)
-            self.vsync_value = vsync_value
-            
+        self.vsync_value = vsync_value
+        
         clock = pygame.time.Clock()
         t  = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
         is_running = True
@@ -195,9 +196,9 @@ def run_start_sequence(fixation_cross = None):
         fixation_cross = FixationCross()
     #instantiate screens
     black_SCR = Screen.with_pygame_display()
-    black_SCR.setup(color = "black",fixation_cross = fixation_cross)
+    black_SCR.setup(background_color = "black",fixation_cross = fixation_cross)
     green_SCR = Screen.with_pygame_display()
-    green_SCR.setup(color = "green",fixation_cross = fixation_cross)
+    green_SCR.setup(background_color = "green",fixation_cross = fixation_cross)
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
     green_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)  #begins the start frame
@@ -208,9 +209,9 @@ def run_start_sequence(fixation_cross = None):
 def run_stop_sequence(fixation_cross = None):
     #instantiate screens
     black_SCR = Screen.with_pygame_display()
-    black_SCR.setup(color = "black", fixation_cross = fixation_cross)
+    black_SCR.setup(background_color = "black", fixation_cross = fixation_cross)
     red_SCR   = Screen.with_pygame_display()
-    red_SCR.setup(color = "red", fixation_cross = fixation_cross)
+    red_SCR.setup(background_color = "red", fixation_cross = fixation_cross)
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
@@ -221,7 +222,7 @@ def run_stop_sequence(fixation_cross = None):
 ################################################################################
 if __name__ == "__main__":
     S = Screen.with_pygame_display()
-    S.setup(color = "blue")
+    S.setup(background_color = "blue")
     S.run(duration = 1, vsync_value = 13)
     run_start_sequence()
     run_stop_sequence()

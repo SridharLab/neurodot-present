@@ -39,7 +39,8 @@ VSYNC_PATCH_HEIGHT_DEFAULT = 0.225
 
 DEFAULT_FLASH_RATE = 17 #Hz
 
-
+#-------------------------------------------------------------------------------
+# utility functions
 def bell(blocking=False):
     pygame.mixer.init()
     bell_sound = pygame.mixer.Sound(resources.get_bellpath("bell.wav"))
@@ -52,6 +53,8 @@ class UserEscape(Exception):
     def __init__(self, msg = "User stopped the sequence"):
         Exception.__init__(self, msg)
 
+#-------------------------------------------------------------------------------
+# graphics
 class Quad:
     def __init__(self, lt, lb, rb, rt, color = COLORS['white']):
         self.vertices = np.array((lt,lb,rb,rt))
@@ -67,26 +70,19 @@ class Quad:
             gl.glEnd()
         finally:
             gl.glEnable(gl.GL_LIGHTING)
+            
+#-------------------------------------------------------------------------------
+# math
+# functions for converting between coordinate systems
+def cart2pol(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    return(r, theta)
 
-class Sprite:
-    def __init__(self):
-        pass
+def pol2cart(r, theta):
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+    return(x, y)
 
-    # functions for converting between coordinate systems
-    def cart2pol(self, x, y):
-        r = np.sqrt(x**2 + y**2)
-        theta = np.arctan2(y, x)
-        return(r, theta)
 
-    def pol2cart(self, r, theta):
-        x = r * np.cos(theta)
-        y = r * np.sin(theta)
-        return(x, y)
-
-    def update():
-        raise NotImplementedError("update method must be overridden in Sprite subclass")
-
-    def render():
-        raise NotImplementedError("render method must be overridden in Sprite subclass")
-        
 

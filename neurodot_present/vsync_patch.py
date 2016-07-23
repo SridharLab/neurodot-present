@@ -47,26 +47,27 @@ class VsyncPatch:
         return bit_colors
 
     def render(self, value):
-        left, bottom, width, height = (self.left,self.bottom,self.width,self.height)
-        bit_colors = self.compute_bit_colors(value)
-        gl.glLoadIdentity()
-        gl.glDisable(gl.GL_LIGHTING)
+        if not value is None:
+            left, bottom, width, height = (self.left,self.bottom,self.width,self.height)
+            bit_colors = self.compute_bit_colors(value)
+            gl.glLoadIdentity()
+            gl.glDisable(gl.GL_LIGHTING)
 
-        try:
-            #bit 0, sub square at bottom/right corner, also the vsync trigger bit
-            gl.glColor3f(*bit_colors[0])
-            gl.glRectf(left + width/2.0, bottom,  left + width, bottom + height/2.0) #left,bottom -> right,top
-            #bit 1, sub square at bottom/left corner
-            gl.glColor3f(*bit_colors[1])
-            gl.glRectf(left, bottom,left + width/2.0, bottom + height/2.0) #left,bottom -> right,top
-            #bit 2, sub square at top/left corner
-            gl.glColor3f(*bit_colors[2])
-            gl.glRectf(left, bottom + height/2.0,left + width/2.0, bottom + height) #left,bottom -> right,top
-            #bit 3, sub square at top/right corner
-            gl.glColor3f(*bit_colors[3])
-            gl.glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
-        finally:
-            gl.glEnable(gl.GL_LIGHTING)
+            try:
+                #bit 0, sub square at bottom/right corner, also the vsync trigger bit
+                gl.glColor3f(*bit_colors[0])
+                gl.glRectf(left + width/2.0, bottom,  left + width, bottom + height/2.0) #left,bottom -> right,top
+                #bit 1, sub square at bottom/left corner
+                gl.glColor3f(*bit_colors[1])
+                gl.glRectf(left, bottom,left + width/2.0, bottom + height/2.0) #left,bottom -> right,top
+                #bit 2, sub square at top/left corner
+                gl.glColor3f(*bit_colors[2])
+                gl.glRectf(left, bottom + height/2.0,left + width/2.0, bottom + height) #left,bottom -> right,top
+                #bit 3, sub square at top/right corner
+                gl.glColor3f(*bit_colors[3])
+                gl.glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
+            finally:
+                gl.glEnable(gl.GL_LIGHTING)
     @classmethod
     #define the vsync patch as being in the bottom right corner
     def make_bottom_right(cls,

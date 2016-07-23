@@ -13,10 +13,12 @@ from common import DEBUG, COLORS
 from screen import Screen
 
 class AnimatedScreen(Screen):
-    # sprite_obj must inherit from Sprite
     def setup(self, sprite_list, **kwargs):
-        Screen
-       
+        """'sprite_list' is a sequence of neurodot_present.common.Sprite 
+           class compatible objects
+        """
+        Screen.setup(self, **kwargs)
+        self.sprite_list = sprite_list
 
     def run(self,
             duration = None,
@@ -24,8 +26,11 @@ class AnimatedScreen(Screen):
             wait_on_user_escape = False,
             mask_user_escape = False,
             ):
-
-        # duration param can be used to set a minimum run time (though sprites will not move after their movement duration is up)
+        """'duration' param can be used to set a minimum run time 
+           (though sprites will not move after their movement duration is up)
+        """
+        import pygame
+        
         if not duration == None:
             duration_list = [duration]
         else:
@@ -46,7 +51,8 @@ class AnimatedScreen(Screen):
 
             # clear screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            gl.glClearColor(self.screen_bgColor[0], self.screen_bgColor[1], self.screen_bgColor[2], 1.0)
+            r,g,b = self.background_color
+            gl.glClearColor(r,g,b,1.0)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             gl.glLoadIdentity()
 
@@ -57,8 +63,8 @@ class AnimatedScreen(Screen):
                 sprite.has_rendered = False # reset sprite's render flag
                 if t - t0 < sprite.movement_duration:
 
-                    sprite.update(time = t)  # update sprite's coordinates
-                    sprite.render(time = t)  # attempt to render sprite
+                    sprite.update(t = t)  # update sprite's coordinates
+                    sprite.render(t= t)  # attempt to render sprite
                     render_flags.append(sprite.has_rendered) # get updated render flag
 
             # render fixation cross if it exists
@@ -72,7 +78,7 @@ class AnimatedScreen(Screen):
                 pygame.display.flip()
 
             # handle outstanding events
-            is_running = self.handle_events(mask_user_escape = mask_user_escape)
+            is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
 
             # check if it has been long enough for duration param or maximum sprite movement_duration
             if t - t0 > max(duration_list):
