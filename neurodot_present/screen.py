@@ -3,8 +3,11 @@ from __future__ import print_function
 
 import time
 import numpy as np
+
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
+import ctypes
+
 
 
 #local imports
@@ -44,6 +47,45 @@ class Screen:
                    constrain_aspect = constrain_aspect,
                    display_surface = surf,
                    run_mode = 'pygame',
+                  )
+    @classmethod
+    def with_opengl_texture(cls,
+                            debug = DEBUG
+                           ):
+        # see http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
+        # The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+        FramebufferName = gl.GLuint(0)
+        gl.glGenFramebuffers(1, ctypes.byref(FramebufferName))
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, FramebufferName)
+        
+        # The texture we're going to render to
+        renderedTexture = gl.GLuint(0)
+        gl.glGenTextures(1, ctypes.byref(renderedTexture))
+
+        # "Bind" the newly created texture : all future texture functions will modify this texture
+        gl.glBindTexture(gl.GL_TEXTURE_2D, renderedTexture)
+
+        # Give an empty image to OpenGL ( the last "0" )
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 1024, 768, 0,gl.GL_RGB, gl.GL_UNSIGNED_BYTE, 0)
+
+        # Poor filtering. Needed !
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+
+        # Set "renderedTexture" as our colour attachement #0
+        gl.glFramebufferTexture(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+
+        # Set the list of draw buffers.
+        DrawBuffers = gl.GLenum * 1               #gl.GLenum DrawBuffers[1]
+        DrawBuffers[0] = gl.GL_COLOR_ATTACHMENT0  #  = {gl.GL_COLOR_ATTACHMENT0};
+        gl.glDrawBuffers(1, DrawBuffers); # "1" is the size of DrawBuffers
+
+
+        return cls(width = w,
+                   height = h,
+                   constrain_aspect = constrain_aspect,
+                   display_surface = surf,
+                   run_mode = 'open_gltexture',
                   )
         
     def __init__(self,
