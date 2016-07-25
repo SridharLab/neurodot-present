@@ -34,11 +34,11 @@ renderedTexture = gl.glGenTextures(1)
 gl.glBindTexture(gl.GL_TEXTURE_2D, renderedTexture)
 
 ## Give an empty image to OpenGL ( the last "0" )
-gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 1024, 768, 0,gl.GL_RGB, gl.GL_UNSIGNED_BYTE, gl.GLvoidp(0))
+gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,gl.GL_RGB, gl.GL_UNSIGNED_BYTE, gl.GLvoidp(0))
 
 ## Poor filtering. Needed !
-gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
-gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+#gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+#gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
 
 ### Set "renderedTexture" as our colour attachement #0
 gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, gl.GL_COLOR_ATTACHMENT0, gl.GL_TEXTURE_2D,renderedTexture, 0);
@@ -57,7 +57,7 @@ if gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER) != gl.GL_FRAMEBUFFER_COMPLETE:
 
 # Render to our framebuffer
 gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, framebuffer);
-gl.glViewport(0,0,1024,768); # Render on the whole framebuffer, complete from the lower left corner to the upper right
+gl.glViewport(0,0,w,h); # Render on the whole framebuffer, complete from the lower left corner to the upper right
 
 #-------------------------------------------------------------------------------
 # rendering test code
@@ -69,9 +69,13 @@ q = Quad((0.5,0.5),(0.5,0.75),(0.75,0.5),(0.75,0.75))
 gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 gl.glMatrixMode(gl.GL_MODELVIEW)
 gl.glLoadIdentity()
-q.render()
+#q.render()
 
-#pygame.display.flip()
+# Render to the screen
+gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+gl.glViewport(0,0,w,h) # Render on the whole framebuffer, complete from the lower left corner to the upper right
+
+pygame.display.flip()
 time.sleep(2)
 
 
