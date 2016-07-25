@@ -39,7 +39,6 @@ VSYNC_PATCH_HEIGHT_DEFAULT = 0.225
 
 DEFAULT_FLASH_RATE = 17 #Hz
 
-
 def bell(blocking=False):
     pygame.mixer.init()
     bell_sound = pygame.mixer.Sound(resources.get_bellpath("bell.wav"))
@@ -686,6 +685,7 @@ class DoubleCheckerBoardFlasher(Screen):
                  vsync_patch_height = VSYNC_PATCH_HEIGHT_DEFAULT,
                  constrain_aspect = True,
                  flash_rate_util = None,
+                 max_render_rate = None,
                  ):
         Screen.__init__(self,
                         color = "black",
@@ -696,6 +696,7 @@ class DoubleCheckerBoardFlasher(Screen):
                        )
         self.flash_rate_left  = flash_rate_left
         self.flash_rate_right = flash_rate_right
+        self.max_render_rate = max_render_rate
 
         # check if util_flash_rate was specified: if so, single-check checkerboard will be displayed in center for verifying
         # frequency with vysnc device
@@ -795,11 +796,13 @@ class DoubleCheckerBoardFlasher(Screen):
 
         dtL = 1.0/flash_rate_left
         dtR = 1.0/flash_rate_right
-        tL  = time.time() #time since last change
-        tR  = time.time() #time since last change
-        t0  = time.time()
-        tU = time.time()  # time since last change (Utility patch)
+        # tL  = time.time() #time since last change
+        # tR  = time.time() #time since last change
+        # t0  = time.time()
+        # tU = time.time()  # time since last change (Utility patch)
         t_list = []
+
+        tL = tR = tU = t0 = tRender = time.time()
 
         def render_routine():
             #prepare rendering model
@@ -857,8 +860,15 @@ class DoubleCheckerBoardFlasher(Screen):
                 run_render_routine = True
 
             if run_render_routine:
-                render_routine()
-                t_list.append(t)  #this is for measuring the loop delay
+                if not self.max_render_rate == None:
+                    # ensure render_routine is not called faster than screen refresh rate
+                    if t > (tRender + 1.0/self.max_render_rate):
+                        tRender = t # update render time
+                        render_routine()
+                        t_list.append(t)  #this is for measuring the loop delay
+                else:
+                    render_routine()
+                    t_list.append(t)
 
             #handle outstanding events
             is_running = self.handle_events()
@@ -874,7 +884,7 @@ class DoubleCheckerBoardFlasher(Screen):
 
         # get histogram values
         bins = [0]
-        bins += range(16, 41)
+        bins += range(16, (self.max_render_rate or 60) + 2, 2)
         bins += [1000000]
         freq_list = 1.0 / np.diff(t_list)
         binVals, bins = np.histogram(freq_list, bins)

@@ -38,7 +38,7 @@ if __name__ == "__main__":
     PAUSE_DURATION_RANGE = (2.0,5.0)
 
     # frequency for utility patch (setting to None will hide the patch)
-    FLASH_RATE_UTIL = None
+    FLASH_RATE_UTIL = 19
 
     try:
         #ensure that video mode is at the maxium FPS
@@ -59,7 +59,10 @@ if __name__ == "__main__":
 
         #note only make one instance of a Screen object or else memory requirements will be high
         # use setup functions to change the display parameters during experiment
-        DCBF = DoubleCheckerBoardFlasher(display_mode = display_mode, flash_rate_util = FLASH_RATE_UTIL)
+        DCBF = DoubleCheckerBoardFlasher(display_mode = display_mode,
+                                         flash_rate_util = FLASH_RATE_UTIL,
+                                         max_render_rate = REFRESH_RATE,
+                                         )
         pauseScreen = Screen(color = "neutral-gray", fixation_cross = FC, display_mode = display_mode)
         flash_rates_cycle = itertools.cycle([(FLASH_RATES[0],FLASH_RATES[1],1),(FLASH_RATES[1],FLASH_RATES[0],3)])
 
@@ -97,3 +100,8 @@ if __name__ == "__main__":
         #system_set_resolution(screen_size  = "1920x1200")
 
     sys.exit()
+
+
+
+
+
