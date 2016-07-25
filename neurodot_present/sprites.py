@@ -6,7 +6,7 @@ from common import DEBUG, COLORS, cart2pol, pol2cart
 class Sprite:
     def __init__(self,
                  use_polar_coords = False,
-                 position_initial = [0,0],
+                 position_initial = (0,0),
                  velocity = None,
                  position_final = None,
                  movement_duration = 1.0,  # time to move from position_initial to position_final, seconds
