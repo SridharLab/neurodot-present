@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-import time
+import os, time
 import numpy as np
 
 import OpenGL.GL as gl
@@ -12,7 +12,7 @@ import ctypes
 
 #local imports
 from common import DEBUG, COLORS, SCREEN_LB, SCREEN_LT, SCREEN_RB, SCREEN_RT
-from common import Quad, UserEscape
+from common import Quad, UserEscape, png_file_write
 
 from vsync_patch import VsyncPatch
 from fixation_cross import FixationCross
@@ -129,6 +129,16 @@ class Screen:
               vsync_patch  = "bottom-right",
               fixation_cross = None,
              ):
+             
+        #gl.glShadeModel(gl.GL_SMOOTH)
+        self.background_color = COLORS.get(background_color, background_color)
+        r,g,b = self.background_color
+        gl.glClearColor(r,g,b,1.0)
+        gl.glClearDepth(1.0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT )
+        gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+             
         #configure the display perspective
         # Fill the entire graphics window!
         gl.glViewport(0, 0, self.screen_width, self.screen_height)
@@ -138,9 +148,6 @@ class Screen:
         #project to a 2D perspective
         glu.gluOrtho2D(self.screen_left, self.screen_right, self.screen_bottom, self.screen_top)
         
-        self.background_color = COLORS.get(background_color, background_color)
-        r,g,b = self.background_color
-        gl.glClearColor(r,g,b,1.0)
         
         self.vsync_value = vsync_value
         if vsync_patch == "bottom-right":
@@ -154,9 +161,10 @@ class Screen:
         
     def render(self):
         #prepare rendering model
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
+        gl.glDisable(gl.GL_TEXTURE_2D)
         #self.screen_quad.render()
         if not self.fixation_cross is None:
             self.fixation_cross.render()
@@ -178,7 +186,7 @@ class Screen:
     
         if run_mode is None:
             raise ValueError("no run_mode was specified, try instantiating Screen object from classmethod Screen.with_pygame_display")
-        elif run_mode == "pygame":
+        elif run_mode == "pygame_display":
             self.pygame_display_loop(**kwargs)
         else:
             raise ValueError("run_mode = '%s' is not valid" % run_mode)
@@ -191,7 +199,7 @@ class Screen:
                             mask_user_escape    = False,
                            ):
         import pygame
-
+        
         #error check any passed vsync_values
         if not vsync_value is None:
             vsync_value = int(vsync_value)
@@ -202,20 +210,23 @@ class Screen:
         t  = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
         is_running = True
         self.start_time(t)
+        #render the scene to the buffer
+        self.render()
         while is_running:
+            dt = clock.tick_busy_loop(display_loop_rate)/1e3 #more accurate than tick, but uses more CPU resources
+            t = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
+            print(t,dt)
+            #update the scene model
+            self.update(t, dt)
             #render the scene to the buffer
             self.render()
             #show the scene
             pygame.display.flip()
             #handle outstanding events
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
-            dt = clock.tick_busy_loop(display_loop_rate)/1e3 #more accurate than tick, but uses more CPU resources
-            t = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
             if t - self.t0 > duration:
                 is_running = False
-            #update the scene model
-            self.update(t, dt)
-        #now wait until the user presses escape
+                #now wait until the user presses escape
         if wait_on_user_escape:
             is_waiting = True
             try:
@@ -223,6 +234,57 @@ class Screen:
                     is_waiting = self.pygame_handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
             except UserEscape:# as exc:
                 pass
+                
+    def pygame_recording_loop(self,
+                              duration = 5,
+                              frame_rate = 60,
+                              vsync_value = None,
+                              recording_name = "screen",
+                              show = False,
+                            ):
+        import pygame
+        
+        #error check any passed vsync_values
+        if not vsync_value is None:
+            vsync_value = int(vsync_value)
+            assert( 0 <= vsync_value <= 16)
+        self.vsync_value = vsync_value
+        
+        w, h = (self.screen_width, self.screen_height)
+        t  = 0.0
+        dt = 1.0/frame_rate
+        is_running = True
+        frame_num  = 0
+        total_frames = frame_rate*duration
+        self.start_time(t)
+        #render the scene to the buffer
+        self.render()
+        progress_dt = 10.0
+        realtime0 = time.time()
+        progress_time_last = realtime0
+        while is_running:
+            realtime = time.time()
+            if (realtime - progress_time_last) > progress_dt:
+                progress_time_last = realtime
+                percent_complete = 100*float(frame_num)/total_frames
+                print("%d%% complete (%d s)" % (percent_complete, realtime - realtime0))
+            #record the scene
+            pixel_data = gl.glReadPixels(0,0,w,h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+            png_file_write(recording_name, frame_num, w, h, data = pixel_data)
+            #show the scene
+            if show:
+                pygame.display.flip()
+            #generate time step
+            t += dt
+            #handle outstanding events
+            is_running = self.pygame_handle_events()
+            if t - self.t0 > duration:
+                is_running = False
+            #update the scene model
+            self.update(t, dt)
+            #render the scene to the buffer
+            self.render()
+            frame_num += 1
 
     def pygame_handle_events(self, mask_user_escape = False):
         import pygame

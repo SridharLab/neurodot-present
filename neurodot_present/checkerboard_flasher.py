@@ -32,7 +32,7 @@ class CheckerBoardFlasher(Screen):
               vsync_patch = None
              ):
         Screen.setup(self,
-                     color = screen_background_color,
+                     background_color = screen_background_color,
                      vsync_patch = vsync_patch,
                      )
         #run colors through filter to catch names and convert to RGB
@@ -50,6 +50,11 @@ class CheckerBoardFlasher(Screen):
         self.flash_rate     = flash_rate
         self.flash_interval = 1.0/flash_rate
         
+    def start_time(self,t):
+        Screen.start_time(self,t)
+        self._last_CB_change_time = t
+        self._current_CB = self.CB_cycle.next()
+        
     def render(self):
         Screen.render(self)
         #move so that board is centered and render
@@ -57,12 +62,8 @@ class CheckerBoardFlasher(Screen):
         gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
         self._current_CB.render()
     
-    def start_time(self,t):
-        Screen.start_time(self,t)
-        self._last_CB_change_time = t
-        self._current_CB = self.CB_cycle.next()
-        
     def update(self, t, dt):
+        #print(t,dt)
         if (t - self._last_CB_change_time) >= self.flash_interval:
             self._last_CB_change_time = t
             self._current_CB = self.CB_cycle.next()
@@ -71,6 +72,6 @@ class CheckerBoardFlasher(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    CBF = CheckerBoardFlasher.with_pygame_display()
-    CBF.setup(nrows = 16)
-    CBF.run(duration = 10)
+    CBF = CheckerBoardFlasher.with_pygame_display(display_mode = (64,64),debug = True)
+    CBF.setup(nrows = 1, flash_rate = 19)
+    CBF.pygame_recording_loop(duration = 10.0, frame_rate = 2000, recording_name = "CBF")

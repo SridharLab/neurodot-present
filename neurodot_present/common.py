@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-import time
-import pygame
+import os,time
+import pygame, pygame.image
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import numpy as np
@@ -11,6 +11,8 @@ import fractions
 import copy
 
 import resources
+
+from PIL import Image
 
 
 DEBUG = False
@@ -52,6 +54,18 @@ def bell(blocking=False):
 class UserEscape(Exception):
     def __init__(self, msg = "User stopped the sequence"):
         Exception.__init__(self, msg)
+        
+# write a png file from GL framebuffer data
+def png_file_write(name, frame_num, w, h, data, outdir = None):
+    im = Image.frombuffer("RGBA", (w,h), data, "raw", "RGBA", 0, 0)
+    fname = "%s_%05d.png" % (name,frame_num)
+    if outdir is None:
+        outdir = name
+    #make a directory to store the recording
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+    pathname = os.path.sep.join((outdir,fname))
+    im.save(pathname)
 
 #-------------------------------------------------------------------------------
 # graphics
