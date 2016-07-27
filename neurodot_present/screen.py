@@ -41,12 +41,12 @@ class Screen:
                                        | pygame.HWSURFACE
                                        | fullscreen_flag_value
                                       )
-        
+
         return cls(width = w,
                    height = h,
                    constrain_aspect = constrain_aspect,
                    display_surface = surf,
-                   run_mode = 'pygame',
+                   run_mode = 'pygame_display',
                   )
     @classmethod
     def with_opengl_texture(cls,
@@ -57,7 +57,7 @@ class Screen:
         FramebufferName = gl.GLuint(0)
         gl.glGenFramebuffers(1, ctypes.byref(FramebufferName))
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, FramebufferName)
-        
+
         # The texture we're going to render to
         renderedTexture = gl.GLuint(0)
         gl.glGenTextures(1, ctypes.byref(renderedTexture))
@@ -87,7 +87,7 @@ class Screen:
                    display_surface = surf,
                    run_mode = 'open_gltexture',
                   )
-        
+
     def __init__(self,
                  width,
                  height,
@@ -95,11 +95,9 @@ class Screen:
                  display_surface = None,
                  run_mode = None,
                  ):
-
-
         self.screen_width  = width
         self.screen_height = height
-       
+
         aspect_ratio = float(width)/height
         left, right, bottom, top = (SCREEN_LT[0],SCREEN_RB[0],SCREEN_RB[1],SCREEN_LT[1])
         if constrain_aspect:  # Set the aspect ratio of the plot so that it is not distorted
@@ -110,7 +108,7 @@ class Screen:
             else:
                 left   *= aspect_ratio
                 right  *= aspect_ratio
-        
+
         self.screen_left   = left
         self.screen_right  = right
         self.screen_bottom = bottom
@@ -122,14 +120,14 @@ class Screen:
                                                ))
         self.display_surface = display_surface
         self.run_mode = run_mode
-        
+
     def setup(self,
               background_color = "black",
               vsync_value  = None,
               vsync_patch  = "bottom-right",
               fixation_cross = None,
              ):
-             
+
         #gl.glShadeModel(gl.GL_SMOOTH)
         self.background_color = COLORS.get(background_color, background_color)
         r,g,b = self.background_color
@@ -138,7 +136,7 @@ class Screen:
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT )
         gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST)
         gl.glDisable(gl.GL_DEPTH_TEST)
-             
+
         #configure the display perspective
         # Fill the entire graphics window!
         gl.glViewport(0, 0, self.screen_width, self.screen_height)
@@ -147,8 +145,7 @@ class Screen:
         gl.glLoadIdentity()
         #project to a 2D perspective
         glu.gluOrtho2D(self.screen_left, self.screen_right, self.screen_bottom, self.screen_top)
-        
-        
+
         self.vsync_value = vsync_value
         if vsync_patch == "bottom-right":
             #define the vsync patch as being in the bottom right corner
@@ -156,9 +153,10 @@ class Screen:
                                                             screen_right  = self.screen_right)
         else:
             self.vsync_patch = vsync_patch
-        
+
         self.fixation_cross = fixation_cross
-        
+        self.ready_to_render = True
+
     def render(self):
         #prepare rendering model
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -171,26 +169,26 @@ class Screen:
         #render the vsync patch
         if not self.vsync_patch is None:
             self.vsync_patch.render(value = self.vsync_value)
-            
+
     def start_time(self, t):
         self.t0 = t
 
     def update(self, t, dt):
         #for the simple Screen class there is notthing to update
-        pass
+        self.ready_to_render = True
 
     def run(self, run_mode = None, **kwargs):
         #check to see if run mode default was determined
         if run_mode is None:
             run_mode = self.run_mode
-    
+
         if run_mode is None:
             raise ValueError("no run_mode was specified, try instantiating Screen object from classmethod Screen.with_pygame_display")
         elif run_mode == "pygame_display":
             self.pygame_display_loop(**kwargs)
         else:
             raise ValueError("run_mode = '%s' is not valid" % run_mode)
-           
+
     def pygame_display_loop(self,
                             duration = 5,
                             display_loop_rate = 60,
@@ -199,34 +197,40 @@ class Screen:
                             mask_user_escape    = False,
                            ):
         import pygame
-        
+
         #error check any passed vsync_values
         if not vsync_value is None:
             vsync_value = int(vsync_value)
             assert( 0 <= vsync_value <= 16)
         self.vsync_value = vsync_value
-        
+
         clock = pygame.time.Clock()
         t  = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
         is_running = True
         self.start_time(t)
+
         #render the scene to the buffer
         self.render()
         while is_running:
             dt = clock.tick_busy_loop(display_loop_rate)/1e3 #more accurate than tick, but uses more CPU resources
             t = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
-            print(t,dt)
+            #print(t,dt)
+
             #update the scene model
             self.update(t, dt)
-            #render the scene to the buffer
-            self.render()
-            #show the scene
-            pygame.display.flip()
+
+            if self.ready_to_render:
+                #render the scene to the buffer
+                self.render()
+                #show the scene
+                pygame.display.flip()
+
             #handle outstanding events
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
             if t - self.t0 > duration:
                 is_running = False
-                #now wait until the user presses escape
+
+        #now wait until the user presses escape
         if wait_on_user_escape:
             is_waiting = True
             try:
@@ -234,7 +238,7 @@ class Screen:
                     is_waiting = self.pygame_handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
             except UserEscape:# as exc:
                 pass
-                
+
     def pygame_recording_loop(self,
                               duration = 5,
                               frame_rate = 60,
@@ -243,13 +247,13 @@ class Screen:
                               show = False,
                             ):
         import pygame
-        
+
         #error check any passed vsync_values
         if not vsync_value is None:
             vsync_value = int(vsync_value)
             assert( 0 <= vsync_value <= 16)
         self.vsync_value = vsync_value
-        
+
         w, h = (self.screen_width, self.screen_height)
         t  = 0.0
         dt = 1.0/frame_rate
@@ -295,15 +299,15 @@ class Screen:
                 if (event.key == pygame.K_ESCAPE) and (not mask_user_escape):
                     raise UserEscape
         return True
-        
-        
-def run_start_sequence(fixation_cross = None):
+
+
+def run_start_sequence(fixation_cross = None, **kwargs):
     if fixation_cross is None:
         fixation_cross = FixationCross()
     #instantiate screens
-    black_SCR = Screen.with_pygame_display()
+    black_SCR = Screen.with_pygame_display(**kwargs)
     black_SCR.setup(background_color = "black",fixation_cross = fixation_cross)
-    green_SCR = Screen.with_pygame_display()
+    green_SCR = Screen.with_pygame_display(**kwargs)
     green_SCR.setup(background_color = "green",fixation_cross = fixation_cross)
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
@@ -312,17 +316,17 @@ def run_start_sequence(fixation_cross = None):
     black_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
 
-def run_stop_sequence(fixation_cross = None):
+def run_stop_sequence(fixation_cross = None, **kwargs):
     #instantiate screens
-    black_SCR = Screen.with_pygame_display()
+    black_SCR = Screen.with_pygame_display(**kwargs)
     black_SCR.setup(background_color = "black", fixation_cross = fixation_cross)
-    red_SCR   = Screen.with_pygame_display()
+    red_SCR   = Screen.with_pygame_display(**kwargs)
     red_SCR.setup(background_color = "red", fixation_cross = fixation_cross)
     #run sequence
     black_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
     black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
     red_SCR.run(duration = 0, vsync_value = 5, wait_on_user_escape = True)
-    
+
 ################################################################################
 # TEST CODE
 ################################################################################
@@ -332,4 +336,4 @@ if __name__ == "__main__":
     S.run(duration = 1, vsync_value = 13)
     run_start_sequence()
     run_stop_sequence()
-    
+

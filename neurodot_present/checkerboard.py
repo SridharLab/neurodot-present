@@ -38,6 +38,8 @@ class CheckerBoard:
                 # Create a display list
                 self.display_list = gl.glGenLists(1)
                 gl.glNewList(self.display_list, gl.GL_COMPILE)
+
+                # render the checkerboard
                 gl.glDisable(gl.GL_LIGHTING)
                 for x in range(0, self.nrows):
                     for y in range(0, self.nrows):
@@ -51,6 +53,7 @@ class CheckerBoard:
                     gl.glColor3f(*COLORS['red'])
                     gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
                     glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
+
             finally:
                 gl.glEnable(gl.GL_LIGHTING)
                 # End the display list
@@ -60,4 +63,4 @@ class CheckerBoard:
         else:
             # Render the display list
             gl.glCallList(self.display_list)
-                
+
