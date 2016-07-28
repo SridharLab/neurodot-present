@@ -113,12 +113,13 @@ class DoubleCheckerBoardFlasher(Screen):
 if __name__ == "__main__":
     flash_rate_left = 19
     flash_rate_right = 23
-    # pygame.init()
-    # display_mode = pygame.display.list_modes()[-1]
-    # pygame.quit()
+    pygame.init()
+    display_mode = pygame.display.list_modes()[-1]
+    pygame.quit()
 
     DCBF = DoubleCheckerBoardFlasher.with_pygame_display(
-                                                         #display_mode = display_mode
+                                                         display_mode = (64,64),
+                                                         debug = True
                                                         )
     DCBF.setup_checkerboards(flash_rate_left = flash_rate_left,
                              flash_rate_right = flash_rate_right,
@@ -126,5 +127,10 @@ if __name__ == "__main__":
                              screen_background_color = 'black',
                              nrows = 1
                             )
-    DCBF.run(duration = 120)
-
+    #DCBF.run(duration = 120)
+    frame_rate = 140*25
+    recording_name = "DCBF"
+    DCBF.pygame_recording_loop(duration = 10.0, frame_rate = frame_rate, recording_name = recording_name)
+    #import subprocess
+    #subprocess.call(["ffmpeg", "-framerate",str(frame_rate),"-i", CBF/CBF_%05d.png -c^C libx264 -pix_fmt yuv420p  CBF.mp4)])
+    

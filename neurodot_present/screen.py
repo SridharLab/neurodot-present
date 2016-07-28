@@ -205,15 +205,18 @@ class Screen:
         self.vsync_value = vsync_value
 
         clock = pygame.time.Clock()
-        t  = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
+        t      = time.time()
+        last_t = t 
         is_running = True
         self.start_time(t)
 
         #render the scene to the buffer
         self.render()
         while is_running:
-            dt = clock.tick_busy_loop(display_loop_rate)/1e3 #more accurate than tick, but uses more CPU resources
-            t = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
+            t = time.time()
+            dt = t - last_t
+            #dt = clock.tick_busy_loop(display_loop_rate)/1e3 #more accurate than tick, but uses more CPU resources
+            #t = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
             #print(t,dt)
 
             #update the scene model
@@ -229,6 +232,8 @@ class Screen:
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
             if t - self.t0 > duration:
                 is_running = False
+            #update last time
+            last_t = t
 
         #now wait until the user presses escape
         if wait_on_user_escape:
