@@ -53,8 +53,8 @@ class TripleCheckerBoardFlasher(Screen):
         self.nrows = nrows
         self.CB1 = CheckerBoard(nrows, check_width, color1 = check_color1, color2 = check_color2, show_fixation_dot = show_fixation_dot)
         self.CB2 = CheckerBoard(nrows, check_width, color1 = check_color2, color2 = check_color1, show_fixation_dot = show_fixation_dot) #reversed pattern
-        self.CB1_center = CheckerBoard(nrows_center, check_width_center, color1 = check_color1, color2 = check_color2, show_fixation_dot = show_fixation_dot)
-        self.CB2_center = CheckerBoard(nrows_center, check_width_center, color1 = check_color2, color2 = check_color1, show_fixation_dot = show_fixation_dot)
+        self.CB1_center = CheckerBoard(nrows_center, check_width_center, color1 = check_color1, color2 = check_color2, show_fixation_dot = False)#show_fixation_dot)
+        self.CB2_center = CheckerBoard(nrows_center, check_width_center, color1 = check_color2, color2 = check_color1, show_fixation_dot = False)#show_fixation_dot)
         self.CB_cycle_left = itertools.cycle((self.CB1,self.CB2))
         self.CB_cycle_right = itertools.cycle((self.CB1,self.CB2))
         self.CB_cycle_center = itertools.cycle((self.CB1_center,self.CB2_center))
@@ -73,8 +73,8 @@ class TripleCheckerBoardFlasher(Screen):
 
         # get useful coordinate values for checkerboard rendering locations
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
-        self.xL, self.yL = (self.xC - 0.5*self.screen_right, self.yC)
-        self.xR, self.yR = (self.xC + 0.5*self.screen_right, self.yC)
+        self.xL, self.yL = (self.xC - 0.7*self.screen_right, self.yC)
+        self.xR, self.yR = (self.xC + 0.7*self.screen_right, self.yC)
 
     def start_time(self,t):
         # get start time and set current CB objects (and their change times)
@@ -133,9 +133,9 @@ class TripleCheckerBoardFlasher(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    flash_rate_left = 19
+    flash_rate_left = 15
     flash_rate_right = 23
-    flash_rate_center = 17
+    flash_rate_center = 19
     # pygame.init()
     # display_mode = pygame.display.list_modes()[-1]
     # pygame.quit()
@@ -144,11 +144,12 @@ if __name__ == "__main__":
     DCBF.setup(flash_rate_left = flash_rate_left,
                flash_rate_right = flash_rate_right,
                flash_rate_center = flash_rate_center,
-               check_width = 1.0 / 32.0, #1.0 / 16.0,
-               check_width_center = 0.5,
+               check_width = 1.0 / 16.0,
+               check_width_center = 1.0 / 16.0,
                screen_background_color = 'neutral-gray',
-               nrows = 16, #8,
-               nrows_center = 1,
+               nrows = 8,
+               nrows_center = 8,
+               show_fixation_dot = True,
               )
-    DCBF.run(duration = 30)
+    DCBF.run(duration = 120)
 

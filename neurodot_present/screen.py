@@ -23,7 +23,8 @@ class Screen:
     def with_pygame_display(cls,
                             display_mode = None,
                             constrain_aspect = True,
-                            debug = DEBUG
+                            debug = DEBUG,
+                            hide_mouse = True,
                            ):
         import pygame
         #start up pygame
@@ -41,6 +42,10 @@ class Screen:
                                        | pygame.HWSURFACE
                                        | fullscreen_flag_value
                                       )
+                                      
+        # hide mouse
+        if hide_mouse:
+            pygame.mouse.set_visible(False)
 
         return cls(width = w,
                    height = h,

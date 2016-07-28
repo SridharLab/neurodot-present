@@ -50,9 +50,11 @@ class CheckerBoard:
                         gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
 
                 if self.show_fixation_dot:
-                    gl.glColor3f(*COLORS['red'])
+                    r, g, b = COLORS['red']
+                    gl.glColor3f(r, g, b)
                     gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
                     glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
+
                     
             finally:
                 gl.glEnable(gl.GL_LIGHTING)
