@@ -126,5 +126,5 @@ if __name__ == "__main__":
                              screen_background_color = 'black',
                              nrows = 1
                             )
-    DCBF.run(duration = 120)
+    DCBF.run(duration = 30)
 
