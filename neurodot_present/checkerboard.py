@@ -53,7 +53,7 @@ class CheckerBoard:
                     gl.glColor3f(*COLORS['red'])
                     gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
                     glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
-
+                    
             finally:
                 gl.glEnable(gl.GL_LIGHTING)
                 # End the display list
@@ -63,4 +63,10 @@ class CheckerBoard:
         else:
             # Render the display list
             gl.glCallList(self.display_list)
+    def __del__(self):
+        # __del__ gets called sometimes when render() hasn't yet been run and the OpenGL list doesn't yet exist
+        try:
+            gl.glDeleteLists(self.display_list, 1)
+        except AttributeError:
+            pass
 

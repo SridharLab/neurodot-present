@@ -174,7 +174,7 @@ class Screen:
         self.t0 = t
 
     def update(self, t, dt):
-        #for the simple Screen class there is notthing to update
+        # ensure rendering and display flipping will occur
         self.ready_to_render = True
 
     def run(self, run_mode = None, **kwargs):
@@ -227,6 +227,15 @@ class Screen:
                 self.render()
                 #show the scene
                 pygame.display.flip()
+
+                # code in an attempt to better sync to refresh
+                #pygame.event.pump()
+                # wait for blank
+                #gl.glBegin(gl.GL_POINTS)
+                #gl.glColor4f(0, 0, 0, 0)
+                #gl.glVertex2i(10, 10)
+                #gl.glEnd()
+                #gl.glFinish()
 
             #handle outstanding events
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
