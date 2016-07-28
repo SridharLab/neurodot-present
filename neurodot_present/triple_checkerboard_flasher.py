@@ -20,16 +20,19 @@ from screen import Screen
 
 from checkerboard import CheckerBoard
 
-class DoubleCheckerBoardFlasher(Screen):
+class TripleCheckerBoardFlasher(Screen):
     def setup(self,
               nrows,
+              nrows_center = 1,
               check_width = None,
+              check_width_center = 0.5,
               check_color1 = 'white',
               check_color2 = 'black',
               screen_background_color = 'neutral-gray',
               show_fixation_dot = False,
               flash_rate_left = DEFAULT_FLASH_RATE,
               flash_rate_right = DEFAULT_FLASH_RATE,
+              flash_rate_center = DEFAULT_FLASH_RATE,
               #rate_compensation = None,
               vsync_patch = None,
              ):
@@ -46,19 +49,26 @@ class DoubleCheckerBoardFlasher(Screen):
         if check_width is None:
             check_width = 2.0/nrows #fill whole screen
         self.board_width = check_width*nrows
+        self.board_width_center = check_width_center * nrows_center
         self.nrows = nrows
         self.CB1 = CheckerBoard(nrows, check_width, color1 = check_color1, color2 = check_color2, show_fixation_dot = show_fixation_dot)
         self.CB2 = CheckerBoard(nrows, check_width, color1 = check_color2, color2 = check_color1, show_fixation_dot = show_fixation_dot) #reversed pattern
+        self.CB1_center = CheckerBoard(nrows_center, check_width_center, color1 = check_color1, color2 = check_color2, show_fixation_dot = show_fixation_dot)
+        self.CB2_center = CheckerBoard(nrows_center, check_width_center, color1 = check_color2, color2 = check_color1, show_fixation_dot = show_fixation_dot)
         self.CB_cycle_left = itertools.cycle((self.CB1,self.CB2))
         self.CB_cycle_right = itertools.cycle((self.CB1,self.CB2))
+        self.CB_cycle_center = itertools.cycle((self.CB1_center,self.CB2_center))
 
         # set time-related attributes
         self._last_CB_change_time_left = None
         self._last_CB_change_time_right = None
+        self._last_CB_change_time_center = None
         self.flash_rate_left  = flash_rate_left
         self.flash_interval_left = 1.0/flash_rate_left
         self.flash_rate_right = flash_rate_right
         self.flash_interval_right = 1.0/flash_rate_right
+        self.flash_rate_center = flash_rate_center
+        self.flash_interval_center = 1.0/flash_rate_center
         #self.rate_compensation = rate_compensation
 
         # get useful coordinate values for checkerboard rendering locations
@@ -71,8 +81,10 @@ class DoubleCheckerBoardFlasher(Screen):
         Screen.start_time(self,t)
         self._last_CB_change_time_left = t
         self._last_CB_change_time_right = t
+        self._last_CB_change_time_center = t
         self._current_CB_left = self.CB_cycle_left.next()
         self._current_CB_right = self.CB_cycle_right.next()
+        self._current_CB_center = self.CB_cycle_center.next()
 
     def render(self):
         # do general OpenGL stuff as well as FixationCross and Vsync Patch if needed
@@ -88,6 +100,11 @@ class DoubleCheckerBoardFlasher(Screen):
         gl.glTranslatef(self.xR, self.yR, 0.0)
         self._current_CB_right.render()
 
+        # render center board
+        gl.glLoadIdentity()
+        gl.glTranslatef(-self.board_width_center / 2.0, -self.board_width_center / 2.0, 0.0)
+        self._current_CB_center.render()
+
     def update(self, t, dt):
         self.ready_to_render = False
 
@@ -102,6 +119,11 @@ class DoubleCheckerBoardFlasher(Screen):
             self._current_CB_right = self.CB_cycle_right.next()
             self.ready_to_render = True
 
+        if (t - self._last_CB_change_time_center) >= self.flash_interval_center:
+            self._last_CB_change_time_center = t
+            self._current_CB_center = self.CB_cycle_center.next()
+            self.ready_to_render = True
+
     def run(self, **kwargs):
         # loop rate set too high so it should run effectively as fast as python is capable of looping
         Screen.run(self, display_loop_rate = 10000, **kwargs)
@@ -113,18 +135,20 @@ class DoubleCheckerBoardFlasher(Screen):
 if __name__ == "__main__":
     flash_rate_left = 19
     flash_rate_right = 23
+    flash_rate_center = 17
     # pygame.init()
     # display_mode = pygame.display.list_modes()[-1]
     # pygame.quit()
 
-    DCBF = DoubleCheckerBoardFlasher.with_pygame_display(
-                                                         #display_mode = display_mode
-                                                        )
+    DCBF = TripleCheckerBoardFlasher.with_pygame_display()
     DCBF.setup(flash_rate_left = flash_rate_left,
                flash_rate_right = flash_rate_right,
-               check_width = 0.5,
-               screen_background_color = 'black',
-               nrows = 1
+               flash_rate_center = flash_rate_center,
+               check_width = 1.0 / 32.0, #1.0 / 16.0,
+               check_width_center = 0.5,
+               screen_background_color = 'neutral-gray',
+               nrows = 16, #8,
+               nrows_center = 1,
               )
     DCBF.run(duration = 30)
 
