@@ -9,6 +9,7 @@ import numpy as np
 import itertools
 import fractions
 import copy
+import sys
 
 import resources
 
@@ -54,7 +55,7 @@ def bell(blocking=False):
 class UserEscape(Exception):
     def __init__(self, msg = "User stopped the sequence"):
         Exception.__init__(self, msg)
-        
+
 # write a png file from GL framebuffer data
 def png_file_write(name, frame_num, w, h, data, outdir = None):
     im = Image.frombuffer("RGBA", (w,h), data, "raw", "RGBA", 0, 0)
@@ -66,6 +67,28 @@ def png_file_write(name, frame_num, w, h, data, outdir = None):
         os.mkdir(outdir)
     pathname = os.path.sep.join((outdir,fname))
     im.save(pathname)
+
+# got this straight out of stackexchange: http://stackoverflow.com/questions/17084928/how-to-enable-vsync-in-pyopengl/34768964
+def enable_VBI_sync_osx():
+    if sys.platform != 'darwin':
+        return
+    try:
+        import ctypes
+        import ctypes.util
+        ogl = ctypes.cdll.LoadLibrary(ctypes.util.find_library("OpenGL"))
+        v = ctypes.c_int(1)
+
+        ogl.CGLGetCurrentContext.argtypes = []
+        ogl.CGLGetCurrentContext.restype = ctypes.c_void_p
+
+        ogl.CGLSetParameter.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+        ogl.CGLSetParameter.restype = ctypes.c_int
+
+        context = ogl.CGLGetCurrentContext()
+
+        ogl.CGLSetParameter(context, 222, ctypes.pointer(v))
+    except Exception as e:
+        print("Unable to set vsync mode, using driver defaults: {}".format(e))
 
 #-------------------------------------------------------------------------------
 # graphics
@@ -84,7 +107,7 @@ class Quad:
             gl.glEnd()
         finally:
             gl.glEnable(gl.GL_LIGHTING)
-            
+
 #-------------------------------------------------------------------------------
 # math
 # functions for converting between coordinate systems

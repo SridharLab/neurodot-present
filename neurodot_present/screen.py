@@ -12,7 +12,7 @@ import ctypes
 
 #local imports
 from common import DEBUG, COLORS, SCREEN_LB, SCREEN_LT, SCREEN_RB, SCREEN_RT
-from common import Quad, UserEscape, png_file_write
+from common import Quad, UserEscape, png_file_write, enable_VBI_sync_osx
 
 from vsync_patch import VsyncPatch
 from fixation_cross import FixationCross
@@ -25,6 +25,7 @@ class Screen:
                             constrain_aspect = True,
                             debug = DEBUG,
                             hide_mouse = True,
+                            VBI_sync_osx = True,
                            ):
         import pygame
         #start up pygame
@@ -42,10 +43,14 @@ class Screen:
                                        | pygame.HWSURFACE
                                        | fullscreen_flag_value
                                       )
-                                      
+
         # hide mouse
         if hide_mouse:
             pygame.mouse.set_visible(False)
+
+        # OSX: enable vsync/VBI sync/syncing frame buffer swaps to screen refresh
+        if VBI_sync_osx:
+            enable_VBI_sync_osx()
 
         return cls(width = w,
                    height = h,
@@ -91,6 +96,33 @@ class Screen:
                    constrain_aspect = constrain_aspect,
                    display_surface = surf,
                    run_mode = 'open_gltexture',
+                  )
+
+    @classmethod  # something isn't right with coordinates when you use a psychopy window
+    def with_psychopy_window(cls,
+                             display_mode = None,
+                             constrain_aspect = True,
+                             #debug = DEBUG,
+                             hide_mouse = True,
+                            ):
+        import psychopy.visual
+        import pygame
+        window = psychopy.visual.Window(fullscr = True,
+                                        winType = 'pygame',
+                                        units = 'pix',
+                                        waitBlanking = True,
+                                        checkTiming = True,
+                                       )
+        if display_mode is None:
+            #default to first mode
+            display_mode = pygame.display.list_modes()[0]
+        w, h = display_mode
+
+        return cls(width = w,
+                   height = h,
+                   constrain_aspect = constrain_aspect,
+                   display_surface = window,
+                   run_mode = 'psychopy_window',
                   )
 
     def __init__(self,
@@ -191,6 +223,8 @@ class Screen:
             raise ValueError("no run_mode was specified, try instantiating Screen object from classmethod Screen.with_pygame_display")
         elif run_mode == "pygame_display":
             self.pygame_display_loop(**kwargs)
+        elif run_mode == "psychopy_window":
+            self.psychopy_display_loop(**kwargs)
         else:
             raise ValueError("run_mode = '%s' is not valid" % run_mode)
 
@@ -211,7 +245,7 @@ class Screen:
 
         clock = pygame.time.Clock()
         t      = time.time()
-        last_t = t 
+        last_t = t
         is_running = True
         self.start_time(t)
 
@@ -232,6 +266,7 @@ class Screen:
                 self.render()
                 #show the scene
                 pygame.display.flip()
+                #gl.glFinish()
 
             #handle outstanding events
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
@@ -299,6 +334,60 @@ class Screen:
             #render the scene to the buffer
             self.render()
             frame_num += 1
+
+    def psychopy_display_loop(self,
+                            duration = 5,
+                            display_loop_rate = 60,
+                            vsync_value = None,
+                            wait_on_user_escape = False,
+                            mask_user_escape    = False,
+                           ):
+
+        #error check any passed vsync_values
+        if not vsync_value is None:
+            vsync_value = int(vsync_value)
+            assert( 0 <= vsync_value <= 16)
+        self.vsync_value = vsync_value
+
+        t      = time.time()
+        last_t = t
+        is_running = True
+        self.start_time(t)
+
+        #render the scene to the buffer
+        self.render()
+        while is_running:
+            t = time.time()
+            dt = t - last_t
+            #dt = clock.tick_busy_loop(display_loop_rate)/1e3 #more accurate than tick, but uses more CPU resources
+            #t = pygame.time.get_ticks()/1e3 #convert milliseconds to seconds
+            #print(t,dt)
+
+            #update the scene model
+            self.update(t, dt)
+
+            if self.ready_to_render:
+                pass
+                #render the scene to the buffer
+            self.render()
+                #show the scene
+            self.display_surface.flip()
+
+            #handle outstanding events
+            is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
+            if t - self.t0 > duration:
+                is_running = False
+            #update last time
+            last_t = t
+
+        #now wait until the user presses escape
+        if wait_on_user_escape:
+            is_waiting = True
+            try:
+                while is_waiting:
+                    is_waiting = self.pygame_handle_events(mask_user_escape = False) #ignore mask request which would get you stuck in FULLSCREEN!
+            except UserEscape:# as exc:
+                pass
 
     def pygame_handle_events(self, mask_user_escape = False):
         import pygame

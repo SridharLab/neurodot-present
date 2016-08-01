@@ -24,51 +24,90 @@ class CheckerBoard:
         self.color1 = color1
         self.color2 = color2
         self.show_fixation_dot = show_fixation_dot
-        self.display_list = None #for cached rendering
+        self.display_list_multi = None  #for cached rendering of multiple display lists, leaving ability to change color
 
     def render(self):
-        if self.display_list is None:
+        color1 = self.color1
+        color2 = self.color2
+
+        # create display lists if not yet done
+        if self.display_list_multi is None:
             w = self.check_width
             h = self.check_height
-            color1 = self.color1
-            color2 = self.color2
             board_width = w * self.nrows
             board_height = h * self.nrows
-            try:
-                # Create a display list
-                self.display_list = gl.glGenLists(1)
-                gl.glNewList(self.display_list, gl.GL_COMPILE)
 
-                # render the checkerboard
+            # get needed display list ints
+            if self.show_fixation_dot:
+                self.num_lists = 3  # include list for fixation dot
+            else:
+                self.num_lists = 2
+            self.display_list_multi = gl.glGenLists(self.num_lists)
+
+            # Create a display list for color 1
+            try:
+                gl.glNewList(self.display_list_multi, gl.GL_COMPILE)
+
+                # render the checkerboard's color1 checks
                 gl.glDisable(gl.GL_LIGHTING)
                 for x in range(0, self.nrows):
                     for y in range(0, self.nrows):
                         if (x + y) % 2 == 0:
-                            gl.glColor3f(*color1)
-                        else:
-                            gl.glColor3f(*color2)
-                        gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
-
-                if self.show_fixation_dot:
-                    r, g, b = COLORS['red']
-                    gl.glColor3f(r, g, b)
-                    gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
-                    glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
-
-                    
+                            gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
             finally:
                 gl.glEnable(gl.GL_LIGHTING)
                 # End the display list
                 gl.glEndList()
-                # Render the display list
-                gl.glCallList(self.display_list)
+
+            # create a display list for color 2
+            try:
+                gl.glNewList(self.display_list_multi + 1, gl.GL_COMPILE)
+
+                # render the checkerboard's color2 checks
+                gl.glDisable(gl.GL_LIGHTING)
+                for x in range(0, self.nrows):
+                    for y in range(0, self.nrows):
+                        if (x + y) % 2 == 1:
+                            gl.glRectf(w*x, h*y, w*(x + 1), h*(y + 1))
+            finally:
+                gl.glEnable(gl.GL_LIGHTING)
+                # End the display list
+                gl.glEndList()
+
+            # create list for fixation dot
+            if self.show_fixation_dot:
+                gl.glNewList(self.display_list_multi + 2, gl.GL_COMPILE)
+                gl.glDisable(gl.GL_LIGHTING)
+                r, g, b = COLORS['red']
+                gl.glColor3f(r, g, b)
+                gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
+                glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
+                gl.glEnable(gl.GL_LIGHTING)
+                gl.glEndList()
+
+            self.show_display_lists(color1, color2)
+
         else:
-            # Render the display list
-            gl.glCallList(self.display_list)
+            # render display lists
+            self.show_display_lists(color1, color2)
+
+    def show_display_lists(self, color1, color2):
+        # render the color1 list:
+        gl.glColor3f(*self.color1)
+        gl.glCallList(self.display_list_multi)
+
+        # render the colro2 list:
+        gl.glColor3f(*self.color2)
+        gl.glCallList(self.display_list_multi + 1)
+
+        # render fixation dot
+        if self.show_fixation_dot:
+            gl.glCallList(self.display_list_multi + 2)
+
     def __del__(self):
         # __del__ gets called sometimes when render() hasn't yet been run and the OpenGL list doesn't yet exist
         try:
-            gl.glDeleteLists(self.display_list, 1)
+            gl.glDeleteLists(self.display_list_multi, self.num_lists)
         except AttributeError:
             pass
 

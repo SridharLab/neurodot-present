@@ -76,6 +76,12 @@ class TripleCheckerBoardFlasher(Screen):
         self.xL, self.yL = (self.xC - 0.7*self.screen_right, self.yC)
         self.xR, self.yR = (self.xC + 0.7*self.screen_right, self.yC)
 
+        # some lists for checking things
+        self.vals = itertools.cycle((1,0))
+        self.t_list = []
+        self.val_list = []
+        self.vals_current = self.vals.next()
+
     def start_time(self,t):
         # get start time and set current CB objects (and their change times)
         Screen.start_time(self,t)
@@ -85,6 +91,9 @@ class TripleCheckerBoardFlasher(Screen):
         self._current_CB_left = self.CB_cycle_left.next()
         self._current_CB_right = self.CB_cycle_right.next()
         self._current_CB_center = self.CB_cycle_center.next()
+
+        # also used for checking things
+        self.t_begin = t
 
     def render(self):
         # do general OpenGL stuff as well as FixationCross and Vsync Patch if needed
@@ -114,6 +123,11 @@ class TripleCheckerBoardFlasher(Screen):
             self._current_CB_left = self.CB_cycle_left.next()
             self.ready_to_render = True
 
+            # checking things
+            self.vals_current = self.vals.next()
+        self.val_list.append(self.vals_current)
+        self.t_list.append(t - self.t_begin)
+
         if (t - self._last_CB_change_time_right) >= self.flash_interval_right:
             self._last_CB_change_time_right = t
             self._current_CB_right = self.CB_cycle_right.next()
@@ -133,23 +147,36 @@ class TripleCheckerBoardFlasher(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    flash_rate_left = 15
+    flash_rate_left = 7
     flash_rate_right = 23
     flash_rate_center = 19
-    # pygame.init()
-    # display_mode = pygame.display.list_modes()[-1]
-    # pygame.quit()
+    show_plot = True
 
-    DCBF = TripleCheckerBoardFlasher.with_pygame_display()
+    DCBF = TripleCheckerBoardFlasher.with_pygame_display(#VBI_sync_osx = False,
+                                                         )
+    #DCBF = TripleCheckerBoardFlasher.with_psychopy_window()
     DCBF.setup(flash_rate_left = flash_rate_left,
                flash_rate_right = flash_rate_right,
                flash_rate_center = flash_rate_center,
                check_width = 1.0 / 16.0,
-               check_width_center = 1.0 / 16.0,
+               check_width_center = 0.5,
                screen_background_color = 'neutral-gray',
                nrows = 8,
-               nrows_center = 8,
+               nrows_center = 1,
                show_fixation_dot = True,
               )
-    DCBF.run(duration = 120)
+    DCBF.run(duration = 5)
+    pygame.quit()
+
+    if show_plot:
+        import matplotlib.pyplot as plt
+        import scipy.signal as scps
+        plt.step(DCBF.t_list, DCBF.val_list, color = 'red', label = 'Displayed')
+        time_vals = np.linspace(0, 5, 3600)
+        val_vals = [scps.square(flash_rate_left * np.pi * t, duty = 0.5) / 2.0 + 0.5 for t in time_vals]
+        plt.plot(time_vals, val_vals, color = 'blue', label = 'Ideal')
+        plt.legend(loc = 'best')
+        plt.show()
+
+
 

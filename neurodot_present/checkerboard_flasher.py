@@ -49,19 +49,19 @@ class CheckerBoardFlasher(Screen):
         self._last_CB_change_time = None
         self.flash_rate     = flash_rate
         self.flash_interval = 1.0/flash_rate
-        
+
     def start_time(self,t):
         Screen.start_time(self,t)
         self._last_CB_change_time = t
         self._current_CB = self.CB_cycle.next()
-        
+
     def render(self):
         Screen.render(self)
         #move so that board is centered and render
         gl.glLoadIdentity()
         gl.glTranslatef(-0.5*self.board_width,-0.5*self.board_width,0.0)
         self._current_CB.render()
-    
+
     def update(self, t, dt):
         #print(t,dt)
         if (t - self._last_CB_change_time) >= self.flash_interval:
