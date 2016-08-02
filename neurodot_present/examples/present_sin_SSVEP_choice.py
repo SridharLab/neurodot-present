@@ -26,10 +26,10 @@ def system_set_resolution(screen_size  = None,
         call(cmd)
 
 if __name__ == "__main__":
-    NUM_TRIALS   = 35
+    NUM_TRIALS   = 40
     REST_EVERY   = 10  # user will be given a 10 second break after this many trials (unless experiment is over)
     FLASH_RATES  = [19,23] # Hz
-    CHECKERBOARD_NROWS = 8
+    CHECKERBOARD_NROWS = 32
     CHECK_WIDTH    = 0.5/CHECKERBOARD_NROWS
     PAUSE_DURATION = 1
     CUE_DURATION   = 1
@@ -109,9 +109,9 @@ if __name__ == "__main__":
             if trial_counter%REST_EVERY == 0 and not trial_counter == NUM_TRIALS:
                 common.bell()
                 restScreen.setup(background_color = 'neutral-gray')
-                restScreen.run(duration = 8)
+                restScreen.run(duration = 8, vsync_value = 0)
                 common.bell()
-                restScreen.run(duration = 2)
+                restScreen.run(duration = 2, vsync_value = 0)
 
             # display centered fixation cross to start next trial
             pauseScreen.run(duration = PAUSE_DURATION, vsync_value = 0)
