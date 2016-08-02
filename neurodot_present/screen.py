@@ -11,8 +11,8 @@ import ctypes
 
 
 #local imports
-from common import DEBUG, COLORS, SCREEN_LB, SCREEN_LT, SCREEN_RB, SCREEN_RT
-from common import Quad, UserEscape, png_file_write, enable_VBI_sync_osx
+from common import SETTINGS,COLORS, SCREEN_LB, SCREEN_LT, SCREEN_RB, SCREEN_RT,\
+                   Quad, UserEscape, png_file_write, enable_VBI_sync_osx
 
 from vsync_patch import VsyncPatch
 from fixation_cross import FixationCross
@@ -23,7 +23,7 @@ class Screen:
     def with_pygame_display(cls,
                             display_mode = None,
                             constrain_aspect = True,
-                            debug = DEBUG,
+                            debug = SETTINGS['debug'],
                             hide_mouse = True,
                             VBI_sync_osx = True,
                            ):

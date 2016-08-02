@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import os,time
+from collections import OrderedDict
 import pygame, pygame.image
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
@@ -15,8 +16,8 @@ import resources
 
 from PIL import Image
 
-
-DEBUG = False
+SETTINGS = OrderedDict()
+SETTINGS['debug'] = False
 
 COLORS = {
     'black'   : (0.0,0.0,0.0),

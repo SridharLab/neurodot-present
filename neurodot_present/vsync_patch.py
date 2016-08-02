@@ -6,7 +6,8 @@ import OpenGL.GL as gl
 
 
 #local imports
-from common import DEBUG, COLORS, VSYNC_PATCH_HEIGHT_DEFAULT, VSYNC_PATCH_WIDTH_DEFAULT
+from common import SETTINGS, COLORS, VSYNC_PATCH_HEIGHT_DEFAULT,\
+                   VSYNC_PATCH_WIDTH_DEFAULT
 
 
 class VsyncPatch:
