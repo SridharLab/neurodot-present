@@ -201,6 +201,7 @@ class Screen:
         gl.glLoadIdentity()
         gl.glDisable(gl.GL_TEXTURE_2D)
         #self.screen_quad.render()
+
         if not self.fixation_cross is None:
             self.fixation_cross.render()
         #render the vsync patch

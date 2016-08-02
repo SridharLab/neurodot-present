@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-import time
 import pygame
 import OpenGL.GL as gl
-import OpenGL.GLU as glu
-import numpy as np
-import itertools
-import fractions
-import copy
-
 import numpy as np
 
 #local imports
-from common import COLORS, DEBUG, VSYNC_PATCH_HEIGHT_DEFAULT, VSYNC_PATCH_WIDTH_DEFAULT, DEFAULT_FLASH_RATE
-from common import UserEscape
+from common import DEFAULT_FLASH_RATE
 
 from screen import Screen
 
@@ -23,37 +15,50 @@ from checkerboard import CheckerBoard
 class TripleCheckerBoardSinFlasher(Screen):
     def setup(self,
               nrows,
-              nrows_center = 1,
+              nrows_center = None,
               check_width = None,
-              check_width_center = 0.5,
+              check_width_center = None,
               screen_background_color = 'neutral-gray',
               show_fixation_dot = False,
               flash_rate_left = DEFAULT_FLASH_RATE,
               flash_rate_right = DEFAULT_FLASH_RATE,
               flash_rate_center = DEFAULT_FLASH_RATE,
               #rate_compensation = None,
-              vsync_patch = None,
+              vsync_patch = 'bottom-right',
              ):
         Screen.setup(self,
                      background_color = screen_background_color,
                      vsync_patch = vsync_patch,
                      )
+        # check if we are rendering center board
+        if flash_rate_center == None:
+            self.render_center = False
+        else:
+            self.render_center = True
+            # unless otherwise specified, center checkerboard will be same as others
+            if nrows_center == None:
+                nrows_center = nrows
+            if check_width_center == None:
+                check_width_center = check_width
 
         # set checkerboard-related attributes
         if check_width is None:
             check_width = 2.0/nrows #fill whole screen
         self.board_width = check_width*nrows
-        self.board_width_center = check_width_center * nrows_center
+        if self.render_center:
+            self.board_width_center = check_width_center * nrows_center
         self.nrows = nrows
         self.CB_left = CheckerBoard(nrows, check_width, show_fixation_dot = show_fixation_dot)
         self.CB_right = CheckerBoard(nrows, check_width, show_fixation_dot = show_fixation_dot) #reversed pattern
-        self.CB_center = CheckerBoard(nrows_center, check_width_center, show_fixation_dot = False)#show_fixation_dot)
+        if self.render_center:
+            self.CB_center = CheckerBoard(nrows_center, check_width_center, show_fixation_dot = False)#show_fixation_dot)
 
         # set time-related attributes
         self.overall_start_time = None
         self.flash_rate_left  = flash_rate_left / 2.0  # we measure twice the actual frequency in the brain
         self.flash_rate_right = flash_rate_right / 2.0
-        self.flash_rate_center = flash_rate_center / 2.0
+        if self.render_center:
+            self.flash_rate_center = flash_rate_center / 2.0
         #self.rate_compensation = rate_compensation
 
         # get useful coordinate values for checkerboard rendering locations
@@ -85,9 +90,10 @@ class TripleCheckerBoardSinFlasher(Screen):
         self.CB_right.render()
 
         # render center board
-        gl.glLoadIdentity()
-        gl.glTranslatef(-self.board_width_center / 2.0, -self.board_width_center / 2.0, 0.0)
-        self.CB_center.render()
+        if self.render_center:
+            gl.glLoadIdentity()
+            gl.glTranslatef(-self.board_width_center / 2.0, -self.board_width_center / 2.0, 0.0)
+            self.CB_center.render()
 
     def update(self, t, dt):
         self.ready_to_render = True # render on every Screen.pygame_display_loop loop
@@ -103,9 +109,10 @@ class TripleCheckerBoardSinFlasher(Screen):
         self.CB_right.color2 = color2Right
 
         # update check colors on center checkerboard
-        color1Center, color2Center = self.get_colors(t, self.flash_rate_center)
-        self.CB_center.color1 = color1Center
-        self.CB_center.color2 = color2Center
+        if self.render_center:
+            color1Center, color2Center = self.get_colors(t, self.flash_rate_center)
+            self.CB_center.color1 = color1Center
+            self.CB_center.color2 = color2Center
 
     def get_colors(self, t, flash_rate):
       # get elapsed time
@@ -133,33 +140,47 @@ class TripleCheckerBoardSinFlasher(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    flash_rate_left =  7
-    flash_rate_right = 19
-    flash_rate_center = 23
+    flash_rate_left =  19
+    flash_rate_right = 2
+    flash_rate_center = 1
+    duration = 5
     show_plot = True
 
     DCBF = TripleCheckerBoardSinFlasher.with_pygame_display(#VBI_sync_osx = False,
                                                          )
     #DCBF = TripleCheckerBoardFlasher.with_psychopy_window()
-    DCBF.setup(flash_rate_left = flash_rate_left,
-               flash_rate_right = flash_rate_right,
-               flash_rate_center = flash_rate_center,
+    DCBF.setup(flash_rate_left = flash_rate_left * 2,
+               flash_rate_right = flash_rate_right * 2,
+               flash_rate_center = flash_rate_center * 2,
                check_width = 1.0 / 16.0,
-               check_width_center = 1.0 / 16.0,
+               check_width_center = 4.0 / 16.0,
                screen_background_color = 'neutral-gray',
                nrows = 8,
-               nrows_center = 8,
+               nrows_center = 2,
                show_fixation_dot = True,
               )
-    DCBF.run(duration = 5)
+    DCBF.run(duration = duration)
     pygame.quit()
 
     if show_plot:
+        t_diffs = np.diff(np.array(DCBF.t_list))
+        print('Mean sample interval: ', t_diffs.mean())
+        print('Mean sample frequency:', 1.0/t_diffs.mean())
+        print('Sample interval STD:  ', t_diffs.std())
+
         import matplotlib.pyplot as plt
-        plt.scatter(DCBF.t_list, DCBF.r1_list, color = 'red')
-        time_vals = np.linspace(0, 5, 3600)
+        plt.subplot(2,1,1)
+        plt.scatter(DCBF.t_list, DCBF.r1_list, color = 'red', label = 'Displayed')
+        time_vals = np.linspace(0, duration, duration * 720)
         trig_vals = [-1.0 * np.cos(DCBF.flash_rate_left * 2.0 * np.pi * t) / 2.0 + 0.5 for t in time_vals]
-        plt.plot(time_vals, trig_vals, color = 'blue')
+        plt.plot(time_vals, trig_vals, color = 'blue', label = 'Ideal')
+        plt.legend()#loc = 'best')
+
+        plt.subplot(2,1,2)
+        fft_data = abs(np.fft.rfft(DCBF.r1_list))
+        fft_freqs = np.fft.rfftfreq(len(DCBF.r1_list), 1.0/60)
+        plt.plot(fft_freqs, fft_data)
+        plt.scatter(fft_freqs, fft_data)
         plt.show()
 
 

@@ -147,9 +147,10 @@ class TripleCheckerBoardFlasher(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    flash_rate_left = 7
+    flash_rate_left = 17
     flash_rate_right = 23
     flash_rate_center = 19
+    duration = 5
     show_plot = True
 
     DCBF = TripleCheckerBoardFlasher.with_pygame_display(#VBI_sync_osx = False,
@@ -165,18 +166,31 @@ if __name__ == "__main__":
                nrows_center = 1,
                show_fixation_dot = True,
               )
-    DCBF.run(duration = 5)
+    DCBF.run(duration = duration)
     pygame.quit()
 
     if show_plot:
+        t_diffs = np.diff(np.array(DCBF.t_list))
+        print('Mean sample interval: ', t_diffs.mean())
+        print('Mean sample frequency:', 1.0/t_diffs.mean())
+        print('Sample interval STD:  ', t_diffs.std())
+
         import matplotlib.pyplot as plt
         import scipy.signal as scps
+        # plt.subplot(2,1,1)
         plt.step(DCBF.t_list, DCBF.val_list, color = 'red', label = 'Displayed')
-        time_vals = np.linspace(0, 5, 3600)
+        time_vals = np.linspace(0, duration, duration * 720)
         val_vals = [scps.square(flash_rate_left * np.pi * t, duty = 0.5) / 2.0 + 0.5 for t in time_vals]
         plt.plot(time_vals, val_vals, color = 'blue', label = 'Ideal')
         plt.legend(loc = 'best')
-        plt.show()
+
+        # must set ready_to_render to true in every loop for fft to work to get even sample spacing
+        # note that this introduces its own error, as rendering is not as optimized
+        # plt.subplot(2,1,2)
+        # fft_data = abs(np.fft.rfft(DCBF.val_list))
+        # fft_freqs = np.fft.rfftfreq(len(DCBF.val_list), 1.0/60)
+        # plt.plot(fft_freqs, fft_data)
+        # plt.show()
 
 
 
