@@ -7,7 +7,7 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 
 #local imports
-from common import DEBUG, COLORS
+from common import SETTINGS, COLORS
 
 
 ################################################################################

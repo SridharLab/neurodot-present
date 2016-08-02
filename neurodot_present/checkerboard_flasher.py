@@ -13,7 +13,7 @@ import copy
 import numpy as np
 
 #local imports
-from common import DEBUG, COLORS, VSYNC_PATCH_HEIGHT_DEFAULT, VSYNC_PATCH_WIDTH_DEFAULT, DEFAULT_FLASH_RATE
+from common import SETTINGS, COLORS, VSYNC_PATCH_HEIGHT_DEFAULT, VSYNC_PATCH_WIDTH_DEFAULT, DEFAULT_FLASH_RATE
 from common import UserEscape
 
 from screen import Screen
