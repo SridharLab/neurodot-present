@@ -205,6 +205,7 @@ class Screen:
             self.fixation_cross.render()
         #render the vsync patch
         if not self.vsync_patch is None:
+            print("vsync_patch.render: %s" % self.vsync_value)
             self.vsync_patch.render(value = self.vsync_value)
 
     def start_time(self, t):
@@ -236,7 +237,7 @@ class Screen:
                             mask_user_escape    = False,
                            ):
         import pygame
-
+        #print("pygame_display_loop: vsync_value: %s" % vsync_value)
         #error check any passed vsync_values
         if not vsync_value is None:
             vsync_value = int(vsync_value)

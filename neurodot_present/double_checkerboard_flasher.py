@@ -31,11 +31,13 @@ class DoubleCheckerBoardFlasher(Screen):
               flash_rate_left = DEFAULT_FLASH_RATE,
               flash_rate_right = DEFAULT_FLASH_RATE,
               #rate_compensation = None,
-              vsync_patch = None,
+              vsync_patch = "bottom-right",
+              vsync_value = None,
              ):
         Screen.setup(self,
                      background_color = screen_background_color,
                      vsync_patch = vsync_patch,
+                     
                      )
 
         #run colors through filter to catch names and convert to RGB
