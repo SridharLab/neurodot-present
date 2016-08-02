@@ -60,7 +60,7 @@ class Screen:
                   )
     @classmethod
     def with_opengl_texture(cls,
-                            debug = DEBUG
+                            debug = SETTINGS['debug'],
                            ):
         # see http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
         # The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.

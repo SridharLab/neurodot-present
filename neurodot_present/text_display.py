@@ -10,7 +10,7 @@ import pygame
 
 #local imports
 import resources
-from common import DEBUG, COLORS
+from common import SETTINGS, COLORS
 from screen import Screen
 
 class TextDisplay(Screen):
