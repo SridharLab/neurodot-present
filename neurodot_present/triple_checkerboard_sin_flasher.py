@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-import time
 import pygame
 import OpenGL.GL as gl
-import OpenGL.GLU as glu
-import numpy as np
-import itertools
-import fractions
-import copy
-
 import numpy as np
 
 #local imports
-from common import COLORS, DEBUG, VSYNC_PATCH_HEIGHT_DEFAULT, VSYNC_PATCH_WIDTH_DEFAULT, DEFAULT_FLASH_RATE
-from common import UserEscape
+from common import DEFAULT_FLASH_RATE
 
 from screen import Screen
 
