@@ -206,7 +206,7 @@ class Screen:
             self.fixation_cross.render()
         #render the vsync patch
         if not self.vsync_patch is None:
-            print("vsync_patch.render: %s" % self.vsync_value)
+            #print("vsync_patch.render: %s" % self.vsync_value)
             self.vsync_patch.render(value = self.vsync_value)
 
     def start_time(self, t):
