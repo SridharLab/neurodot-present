@@ -32,7 +32,7 @@ class TripleCheckerBoardSinFlasher(Screen):
               flash_rate_right = DEFAULT_FLASH_RATE,
               flash_rate_center = DEFAULT_FLASH_RATE,
               #rate_compensation = None,
-              vsync_patch = None,
+              vsync_patch = 'bottom-right',
              ):
         Screen.setup(self,
                      background_color = screen_background_color,
