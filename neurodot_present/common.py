@@ -19,6 +19,8 @@ from PIL import Image
 SETTINGS = OrderedDict()
 SETTINGS['debug'] = False
 
+inv_gamma = 0.43
+
 COLORS = {
     'black'   : (0.0,0.0,0.0),
     'red'     : (1.0,0.0,0.0),
@@ -28,7 +30,7 @@ COLORS = {
     'magenta' : (1.0,0.0,1.0),
     'yellow'  : (1.0,1.0,0.0),
     'white'   : (1.0,1.0,1.0),
-    'neutral-gray': (0.75,0.75,0.75)
+    'neutral-gray': (0.5**inv_gamma,0.5**inv_gamma,0.5**inv_gamma)
 }
 
 SCREEN_LT = np.array((-1.0, 1.0))
