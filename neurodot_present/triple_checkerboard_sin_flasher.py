@@ -24,6 +24,7 @@ class TripleCheckerBoardSinFlasher(Screen):
               flash_rate_right = DEFAULT_FLASH_RATE,
               flash_rate_center = DEFAULT_FLASH_RATE,
               #rate_compensation = None,
+              inv_gamma = 0.43,
               vsync_patch = 'bottom-right',
              ):
         Screen.setup(self,
@@ -55,11 +56,12 @@ class TripleCheckerBoardSinFlasher(Screen):
 
         # set time-related attributes
         self.overall_start_time = None
-        self.flash_rate_left  = flash_rate_left / 2.0  # we measure twice the actual frequency in the brain
-        self.flash_rate_right = flash_rate_right / 2.0
+        self.flash_rate_left  = flash_rate_left
+        self.flash_rate_right = flash_rate_right
         if self.render_center:
-            self.flash_rate_center = flash_rate_center / 2.0
+            self.flash_rate_center = flash_rate_center
         #self.rate_compensation = rate_compensation
+        self.inv_gamma = inv_gamma #for removing gamma correction
 
         # get useful coordinate values for checkerboard rendering locations
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
@@ -73,7 +75,21 @@ class TripleCheckerBoardSinFlasher(Screen):
     def start_time(self,t):
         # get start time and set current CB objects (and their change times)
         Screen.start_time(self,t)
-        self.overall_start_time = t
+        self._color_func_left   = self._get_color_func(start_time = t,
+                                                       flash_rate = self.flash_rate_left,
+                                                       shape = "sin",
+                                                       inv_gamma = self.inv_gamma,
+                                                      )
+        self._color_func_right  = self._get_color_func(start_time = t,
+                                                       flash_rate = self.flash_rate_right,
+                                                       shape = "sin",
+                                                       inv_gamma = self.inv_gamma,
+                                                      )
+        self._color_func_center = self._get_color_func(start_time = t,
+                                                       flash_rate = self.flash_rate_center,
+                                                       shape = "square",
+                                                       inv_gamma = self.inv_gamma,
+                                                      )
 
     def render(self):
         # do general OpenGL stuff as well as FixationCross and Vsync Patch if needed
@@ -99,54 +115,55 @@ class TripleCheckerBoardSinFlasher(Screen):
         self.ready_to_render = True # render on every Screen.pygame_display_loop loop
 
         # update check colors on left checkerboard
-        color1Left, color2Left = self.get_colors(t, self.flash_rate_left)
-        self.CB_left.color1 = color1Left
-        self.CB_left.color2 = color2Left
+        c1, c2 = self._color_func_left(t)
+        self.CB_left.color1 = c1
+        self.CB_left.color2 = c2
+        # get some values for checking what was displayed
+        self.r1_list.append(c1[0])
+        self.t_list.append(t-self.t0)
 
         # update check colors on right checkerboard
-        color1Right, color2Right = self.get_colors(t, self.flash_rate_right)
-        self.CB_right.color1 = color1Right
-        self.CB_right.color2 = color2Right
+        c1, c2 = self._color_func_right(t)
+        self.CB_right.color1 = c1
+        self.CB_right.color2 = c2
 
         # update check colors on center checkerboard
         if self.render_center:
-            color1Center, color2Center = self.get_colors(t, self.flash_rate_center, inv_gamma=1.0)
-            self.CB_center.color1 = color1Center
-            self.CB_center.color2 = color2Center
+            c1, c2 = self._color_func_center(t)
+            self.CB_center.color1 = c1
+            self.CB_center.color2 = c2
 
-    def get_colors(self, t, flash_rate,
-                   shape="sin",
-                   inv_gamma = 0.43,
-                   ):
-      # get elapsed time
-      t = t - self.overall_start_time
+    def _get_color_func(self,
+                        start_time,
+                        flash_rate,
+                        shape="sin",
+                        inv_gamma = 0.43,
+                       ):
+        color_func = None
+        # get color functions
+        if shape == "sin":
+            # Contrasts will go from 0 and 1 at flash_rate Hz,
+            # that is the half-cycle of full contrast change
+            # to which the SSVEP is sensitive.
+            # The intensities are inverse gamma corrected.
+            def color_func(t):
+                te = t - start_time # compute elapsed time
+                cos_term = np.cos(flash_rate * np.pi * te) / 2.0
+                c1 = (-cos_term + 0.5)**inv_gamma
+                c2 = ( cos_term + 0.5)**inv_gamma
+                return ((c1,c1,c1), (c2,c2,c2))
+        elif shape == "square":
+            def color_func(t):
+                te = t - start_time # compute elapsed time
+                c = -1.0 * np.cos(flash_rate * np.pi * te) / 2.0
+                if c > 0.0:
+                    return ((1.0,1.0,1.0), (0.0,0.0,0.0))
+                else:
+                    return ((0.0,0.0,0.0), (1.0,1.0,1.0))
+        else:
+            raise ValueError("shape = '%s' is not valid, try 'sin' or 'square'" % shape)
 
-      # get colors
-      
-      color1, color2 = (None,None)
-      if shape == "sin":
-          # Contrasts will go from 0 and 1 at flash_rate Hz,
-          # that is the half-cycle of full contrast change
-          # to which the SSVEP is sensitive.
-          # The intensities are inverse gamma corrected.
-          r1 = g1 = b1 = (-1.0 * np.cos(flash_rate * np.pi * t) / 2.0 + 0.5)**inv_gamma
-          r2 = g2 = b2 = (np.cos(flash_rate * np.pi * t) / 2.0 + 0.5)**inv_gamma
-          color1 = (r1, g1, b1)
-          color2 = (r2, g2, b2)
-      elif shape == "square":
-          c = -1.0 * np.cos(flash_rate * np.pi * t) / 2.0 + 0.5
-          if c > 0.5:
-              color1 = (1.0,1.0,1.0)
-              color2 = (0.0,0.0,0.0)
-          else:
-              color1 = (0.0,0.0,0.0)
-              color2 = (1.0,1.0,1.0)
-      # get some values for checking what was displayed
-      if flash_rate == self.flash_rate_left:
-        self.r1_list.append(r1)
-        self.t_list.append(t)
-
-      return color1, color2
+        return color_func
 
     def run(self, **kwargs):
         # loop rate set too high so that it should run effectively as fast as python is capable of looping
@@ -162,66 +179,71 @@ if __name__ == "__main__":
     flash_rate_center = 5
     nrows = 16
     nrows_center = 1
-    duration = 5
+    duration = 10
     show_plot = True
+    inv_gamma = 0.43
 
     TCBF = TripleCheckerBoardSinFlasher.with_pygame_display(#VBI_sync_osx = False,
                                                             display_mode = (512,512),
                                                             debug = True,
-                                                         )
+                                                           )
     #TCBF = TripleCheckerBoardFlasher.with_psychopy_window()
-    TCBF.setup(flash_rate_left = flash_rate_left * 2,
-               flash_rate_right = flash_rate_right * 2,
-               flash_rate_center = flash_rate_center * 2,
+    TCBF.setup(flash_rate_left = flash_rate_left,
+               flash_rate_right = flash_rate_right,
+               flash_rate_center = flash_rate_center,
                check_width = 0.5 / nrows,
                check_width_center = 0.5 / nrows_center,
                screen_background_color = 'neutral-gray',
                nrows = nrows,
                nrows_center = nrows_center,
                show_fixation_dot = True,
+               inv_gamma = inv_gamma,
               )
-    frame_rate = 140
-    recording_name = "TCBFsin140FPS_512x512"
-    TCBF.pygame_recording_loop(duration = 10.0,
-                               frame_rate = frame_rate,
-                               recording_name = recording_name,
-                               show = True,
-                               )
-    import subprocess
-    input_format = "%s/%s_%%05d.png" % (recording_name, recording_name)
-    output_name = "%s.mp4" % recording_name
-    subprocess.call(["ffmpeg", 
-                     "-framerate",str(frame_rate),
-                     "-i", input_format,
-                     "-c:v", "libx264",
-                     "-preset", "fast",  #compression rate
-                     #"-pix_fmt", "yuv420p",
-                     "-qp","0",              #lossless
-                     #"-r", str(frame_rate),
-                     output_name])
-              
-#    TCBF.run(duration = duration)
-#    pygame.quit()
+#-------------------------------------------------------------------------------
+# RECORDING CODE
+#    frame_rate = 140
+#    recording_name = "TCBFsin140FPS_512x512"
+#    TCBF.pygame_recording_loop(duration = 10.0,
+#                               frame_rate = frame_rate,
+#                               recording_name = recording_name,
+#                               show = True,
+#                               )
+#    import subprocess
+#    input_format = "%s/%s_%%05d.png" % (recording_name, recording_name)
+#    output_name = "%s.mp4" % recording_name
+#    subprocess.call(["ffmpeg", 
+#                     "-framerate",str(frame_rate),
+#                     "-i", input_format,
+#                     "-c:v", "libx264",
+#                     "-preset", "fast",  #compression rate
+#                     #"-pix_fmt", "yuv420p",
+#                     "-qp","0",              #lossless
+#                     #"-r", str(frame_rate),
+#                     output_name])
+#-------------------------------------------------------------------------------
+# TEST CODE
+    TCBF.run(duration = duration)
+    pygame.quit()
 
-#    if show_plot:
-#        t_diffs = np.diff(np.array(TCBF.t_list))
-#        print('Mean sample interval: ', t_diffs.mean())
-#        print('Mean sample frequency:', 1.0/t_diffs.mean())
-#        print('Sample interval STD:  ', t_diffs.std())
+    if show_plot:
+        t_diffs = np.diff(np.array(TCBF.t_list))
+        print('Mean sample interval: ', t_diffs.mean())
+        print('Mean sample frequency:', 1.0/t_diffs.mean())
+        print('Sample interval STD:  ', t_diffs.std())
 
-#        import matplotlib.pyplot as plt
-#        plt.subplot(2,1,1)
-#        plt.scatter(TCBF.t_list, TCBF.r1_list, color = 'red', label = 'Displayed')
-#        time_vals = np.linspace(0, duration, duration * 720)
-#        trig_vals = [(-1.0 * np.cos(TCBF.flash_rate_left * 2.0 * np.pi * t) / 2.0 + 0.5)**0.43 for t in time_vals]
-#        plt.plot(time_vals, trig_vals, color = 'blue', label = 'Ideal')
-#        plt.legend()#loc = 'best')
+        import matplotlib.pyplot as plt
+        plt.subplot(2,1,1)
+        plt.scatter(TCBF.t_list, TCBF.r1_list, color = 'red', label = 'Displayed')
+        time_vals = np.linspace(0, duration, duration * 720)
+        trig_vals = [(-1.0 * np.cos(TCBF.flash_rate_left * np.pi * t) / 2.0 + 0.5)**0.43 for t in time_vals]
+        plt.plot(time_vals, trig_vals, color = 'blue', label = 'Ideal')
+        plt.legend()#loc = 'best')
 
-#        plt.subplot(2,1,2)
-#        fft_data = abs(np.fft.rfft(TCBF.r1_list))
-#        fft_freqs = np.fft.rfftfreq(len(TCBF.r1_list), 1.0/140)
-#        plt.plot(fft_freqs, fft_data)
-#        plt.scatter(fft_freqs, fft_data)
-#        plt.show()
+        plt.subplot(2,1,2)
+        fft_data = abs(np.fft.rfft(TCBF.r1_list))
+        fft_freqs = np.fft.rfftfreq(len(TCBF.r1_list), 1.0/140)
+        plt.plot(fft_freqs, fft_data)
+        plt.scatter(fft_freqs, fft_data)
+        plt.show()
 
 
