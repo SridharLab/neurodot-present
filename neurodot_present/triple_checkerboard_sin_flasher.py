@@ -176,7 +176,7 @@ class TripleCheckerBoardSinFlasher(Screen):
 if __name__ == "__main__":
     flash_rate_left =  15
     flash_rate_right = 23
-    flash_rate_center = 5
+    flash_rate_center = 19
     nrows = 16
     nrows_center = 1
     duration = 10
