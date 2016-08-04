@@ -11,6 +11,8 @@ import itertools
 import fractions
 import copy
 import sys
+import shelve
+import scipy.interpolate
 
 import resources
 
@@ -44,6 +46,8 @@ VSYNC_PATCH_WIDTH_DEFAULT  = 0.225
 VSYNC_PATCH_HEIGHT_DEFAULT = 0.225
 
 DEFAULT_FLASH_RATE = 17 #Hz
+
+MONITOR_NAME = 'benq'
 
 #-------------------------------------------------------------------------------
 # utility functions
@@ -92,6 +96,17 @@ def enable_VBI_sync_osx():
         ogl.CGLSetParameter(context, 222, ctypes.pointer(v))
     except Exception as e:
         print("Unable to set vsync mode, using driver defaults: {}".format(e))
+
+def load_gamma_calibration(monitor_name = MONITOR_NAME):
+    home = os.path.expanduser('~')
+    dbPath = os.path.sep.join((home, '.neurodot_present', 'calibrations', monitor_name))
+
+    db = shelve.open(dbPath)
+    inputs = db['input_intensities']
+    gamma_values = db['gamma_values']
+    db.close()
+
+    return scipy.interpolate.interp1d(inputs, gamma_values, kind = 'cubic')
 
 #-------------------------------------------------------------------------------
 # graphics

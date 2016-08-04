@@ -272,7 +272,7 @@ class Screen:
 
             #handle outstanding events
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
-            if t - self.t0 > duration:
+            if t - self.t0 > duration and not duration is None:
                 is_running = False
             #update last time
             last_t = t
@@ -377,7 +377,7 @@ class Screen:
 
             #handle outstanding events
             is_running = self.pygame_handle_events(mask_user_escape = mask_user_escape)
-            if t - self.t0 > duration:
+            if t - self.t0 > duration and not duration is None:
                 is_running = False
             #update last time
             last_t = t

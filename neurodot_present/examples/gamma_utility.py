@@ -91,12 +91,14 @@ class GammaUtility(npr.Screen):
               dark_linewidth = 1,
               background_color = 'black',
               color_bits = 8,
-              color_channel = 'RGB'
+              color_channel = 'RGB',
+              print_output = True
              ):
         npr.Screen.setup(self, background_color = background_color)
         self.bot_left = bot_left
         self.top_right = top_right
         self.color_channel = color_channel
+        self.print_output = print_output
 
         # get pixel widths and heights in OpenGL coordinates
         self.pix_h = (2.0 * self.screen_top) / self.screen_height
@@ -169,7 +171,7 @@ class GammaUtility(npr.Screen):
                 return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.print_data()  # could delete this so that info only printed on enter
+                    #self.print_data()  # could delete this so that info only printed on enter
                     raise npr.UserEscape
 
                 # print info if enter pressed
@@ -214,8 +216,9 @@ class GammaUtility(npr.Screen):
         npr.Screen.run(self, display_loop_rate = 10000, **kwargs)
 
     def print_data(self):
-        print('Final [0,1] intensity:', self.test_color_current)
-        print('Final', self.color_bits, 'bit intensity:', 2**self.color_bits - self.color_index)
+        if self.print_output:
+            print('Final [0,1] intensity:', self.test_color_current)
+            print('Final', self.color_bits, 'bit intensity:', 2**self.color_bits - self.color_index)
 
 ################################################################################
 """
@@ -225,28 +228,108 @@ Ed Eskew
 Directions:
 With the screen far enough away that the lines on the left patch are indistinguishable, use the Up/Down arrow keys to
 adjust the brightness of the right patch until it appears equal to the left.  Use the CTRL modifier for a more coarse
-adjustment, and Shift+CTRL for very coarse.  The program will print the intensity value you arrive at and exit upon
-pressing RETURN.  Pressing "Escape" will exit the program without printing anything.
+adjustment, and Shift+CTRL for very coarse.  Press "Return" to record the current intensity of the test patch and
+advance to the next reference patch.  Press "Escape" to exit the program without doing anything.
 """
 
 if __name__ == '__main__':
+    import math
+    import sys
+    import os
+    import shelve
+    import matplotlib.pyplot as plt
+    from scipy import interpolate
+
     bot_left = (-0.50, -0.25)
     top_right = (0.50, 0.25)
-    bright_linewidth = 1
-    dark_linewidth   = 1
     color_channel    = 'RGB' # can be RGB or R, G, or B alone
+    brightness_ratios = [(1,1), (1,2), (2,1), (1,3), (3,1)]  # (bright, dark)
+    monitor_name = 'mbpro_retina'
 
     gammaUtility = GammaUtility.with_pygame_display()
-    gammaUtility.setup(bot_left = bot_left,
+
+    display_output = True
+    inputs = []
+    for brightness in brightness_ratios:
+        gammaUtility.setup(bot_left = bot_left,
                        top_right = top_right,
-                       bright_linewidth = bright_linewidth,
-                       dark_linewidth = dark_linewidth,
+                       bright_linewidth = brightness[0],
+                       dark_linewidth = brightness[1],
                        background_color = 'black',
                        color_bits = 8,
-                       color_channel = color_channel
+                       color_channel = color_channel,
+                       print_output = False,
                       )
-    try:
-        gammaUtility.run(duration = 'string makes duration forever')
-    except npr.UserEscape:
-        pass
+        try:
+            gammaUtility.run(duration = None)
+            inputs.append(gammaUtility.test_color_current)
+        except npr.UserEscape:
+            display_output = False
+            break
+    pygame.quit()
+
+    if display_output:
+        # get intensity values for each reference ratio
+        ref_values = [vals[0] / sum(vals) for vals in brightness_ratios]
+
+        # we know that ref_values[i]**gamma = output_brightness[i]
+        gamma_values = [math.log(inputs[i], ref_values[i]) for i in range(0, len(inputs))]
+
+        # hardcoded example values so I don't have to do the experiment every time
+        # inputs = [0.74117647058823533, 0.61960784313725492, 0.83921568627450982, 0.55686274509803924, 0.8784313725490196]
+        # gamma_values = [0.43211101263778523, 0.4357028562931584, 0.43231224248724714, 0.4223031586770879, 0.45055811854634004]
+
+        # get cubic spline function for this info
+        x_range = np.linspace(min(inputs), max(inputs), 100)
+        gam_func = interpolate.interp1d(inputs, gamma_values, kind = 'cubic')
+        interp_gams = [gam_func(x) for x in x_range]
+
+        # pyplot stuff
+        fig = plt.figure(1)
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(inputs, gamma_values)
+        ax1.plot(x_range, interp_gams)
+        ax1.grid(True)
+        ax1.set_xlabel('Input Intensity')
+        ax1.set_ylabel('Gamma')
+        ax1.set_title('Input RGB Intensity vs. Gamma Factor')
+        #plt.xticks([round(out, 3) for out in inputs])
+        #plt.yticks([round(gam, 3) for gam in gamma_values])
+        plt.show()
+
+        print('Final input intensities:')
+        print(inputs)
+        print('Gamma values:')
+        print(gamma_values)
+
+        # check if calibrations folder exists, make it if not
+        home = os.path.expanduser('~')
+        npPath = os.path.sep.join((home, '.neurodot_present'))
+        calPath = os.path.sep.join((home,'.neurodot_present', 'calibrations'))
+        if not os.path.isdir(npPath):
+            os.mkdir(npPath)
+        if not os.path.isdir(calPath):
+            os.mkdir(calPath)
+
+        # shelve needed values
+        dbPath = os.path.sep.join((home, '.neurodot_present', 'calibrations', monitor_name))
+        db = shelve.open(dbPath)
+        db['input_intensities'] = inputs
+        db['gamma_values'] = gamma_values
+        db.close()
+
+        sys.exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
