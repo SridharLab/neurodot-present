@@ -122,15 +122,14 @@ class TripleCheckerBoardSinFlasher(Screen):
       t = t - self.overall_start_time
 
       # get colors
-      
+
       color1, color2 = (None,None)
       if shape == "sin":
           # Contrasts will go from 0 and 1 at flash_rate Hz,
           # that is the half-cycle of full contrast change
           # to which the SSVEP is sensitive.
-          # The intensities are inverse gamma corrected.
-          r1 = g1 = b1 = (-1.0 * np.cos(flash_rate * np.pi * t) / 2.0 + 0.5)**inv_gamma
-          r2 = g2 = b2 = (np.cos(flash_rate * np.pi * t) / 2.0 + 0.5)**inv_gamma
+          r1 = g1 = b1 = (-1.0 * np.cos(flash_rate * np.pi * t) / 2.0 + 0.5)
+          r2 = g2 = b2 = (np.cos(flash_rate * np.pi * t) / 2.0 + 0.5)
           color1 = (r1, g1, b1)
           color2 = (r2, g2, b2)
       elif shape == "square":
@@ -166,8 +165,8 @@ if __name__ == "__main__":
     show_plot = True
 
     TCBF = TripleCheckerBoardSinFlasher.with_pygame_display(#VBI_sync_osx = False,
-                                                            display_mode = (512,512),
-                                                            debug = True,
+                                                            #display_mode = (512,512),
+                                                            #debug = True,
                                                          )
     #TCBF = TripleCheckerBoardFlasher.with_psychopy_window()
     TCBF.setup(flash_rate_left = flash_rate_left * 2,
@@ -180,48 +179,48 @@ if __name__ == "__main__":
                nrows_center = nrows_center,
                show_fixation_dot = True,
               )
-    frame_rate = 140
-    recording_name = "TCBFsin140FPS_512x512"
-    TCBF.pygame_recording_loop(duration = 10.0,
-                               frame_rate = frame_rate,
-                               recording_name = recording_name,
-                               show = True,
-                               )
-    import subprocess
-    input_format = "%s/%s_%%05d.png" % (recording_name, recording_name)
-    output_name = "%s.mp4" % recording_name
-    subprocess.call(["ffmpeg", 
-                     "-framerate",str(frame_rate),
-                     "-i", input_format,
-                     "-c:v", "libx264",
-                     "-preset", "fast",  #compression rate
-                     #"-pix_fmt", "yuv420p",
-                     "-qp","0",              #lossless
-                     #"-r", str(frame_rate),
-                     output_name])
-              
-#    TCBF.run(duration = duration)
-#    pygame.quit()
+    # frame_rate = 140
+    # recording_name = "TCBFsin140FPS_512x512"
+    # TCBF.pygame_recording_loop(duration = 10.0,
+    #                            frame_rate = frame_rate,
+    #                            recording_name = recording_name,
+    #                            show = True,
+    #                            )
+    # import subprocess
+    # input_format = "%s/%s_%%05d.png" % (recording_name, recording_name)
+    # output_name = "%s.mp4" % recording_name
+    # subprocess.call(["ffmpeg",
+    #                  "-framerate",str(frame_rate),
+    #                  "-i", input_format,
+    #                  "-c:v", "libx264",
+    #                  "-preset", "fast",  #compression rate
+    #                  #"-pix_fmt", "yuv420p",
+    #                  "-qp","0",              #lossless
+    #                  #"-r", str(frame_rate),
+    #                  output_name])
 
-#    if show_plot:
-#        t_diffs = np.diff(np.array(TCBF.t_list))
-#        print('Mean sample interval: ', t_diffs.mean())
-#        print('Mean sample frequency:', 1.0/t_diffs.mean())
-#        print('Sample interval STD:  ', t_diffs.std())
+    TCBF.run(duration = duration)
+    pygame.quit()
 
-#        import matplotlib.pyplot as plt
-#        plt.subplot(2,1,1)
-#        plt.scatter(TCBF.t_list, TCBF.r1_list, color = 'red', label = 'Displayed')
-#        time_vals = np.linspace(0, duration, duration * 720)
-#        trig_vals = [(-1.0 * np.cos(TCBF.flash_rate_left * 2.0 * np.pi * t) / 2.0 + 0.5)**0.43 for t in time_vals]
-#        plt.plot(time_vals, trig_vals, color = 'blue', label = 'Ideal')
-#        plt.legend()#loc = 'best')
+    if show_plot:
+        t_diffs = np.diff(np.array(TCBF.t_list))
+        print('Mean sample interval: ', t_diffs.mean())
+        print('Mean sample frequency:', 1.0/t_diffs.mean())
+        print('Sample interval STD:  ', t_diffs.std())
 
-#        plt.subplot(2,1,2)
-#        fft_data = abs(np.fft.rfft(TCBF.r1_list))
-#        fft_freqs = np.fft.rfftfreq(len(TCBF.r1_list), 1.0/140)
-#        plt.plot(fft_freqs, fft_data)
-#        plt.scatter(fft_freqs, fft_data)
-#        plt.show()
+        import matplotlib.pyplot as plt
+        plt.subplot(2,1,1)
+        plt.scatter(TCBF.t_list, TCBF.r1_list, color = 'red', label = 'Displayed')
+        time_vals = np.linspace(0, duration, duration * 720)
+        trig_vals = [(-1.0 * np.cos(TCBF.flash_rate_left * 2.0 * np.pi * t) / 2.0 + 0.5) for t in time_vals]
+        plt.plot(time_vals, trig_vals, color = 'blue', label = 'Ideal')
+        plt.legend()#loc = 'best')
+
+        plt.subplot(2,1,2)
+        fft_data = abs(np.fft.rfft(TCBF.r1_list))
+        fft_freqs = np.fft.rfftfreq(len(TCBF.r1_list), 1.0/140)
+        plt.plot(fft_freqs, fft_data)
+        plt.scatter(fft_freqs, fft_data)
+        plt.show()
 
 

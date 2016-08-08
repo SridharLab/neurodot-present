@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import pygame
 import OpenGL.GL as gl
 import numpy as np
+import itertools
 
 import neurodot_present as npr
 
@@ -114,6 +115,10 @@ class GammaUtility(npr.Screen):
         self.color_index = 0
         self.test_color_current = self.color_levels[self.color_index]
 
+        # increment quantity for use with mouse
+        self.mouse_increment_cycle = itertools.cycle((1,int(2**self.color_bits / 32)))
+        self.mouse_increment = self.mouse_increment_cycle.next()
+
         self.standard_patch = TrueBrightnessPatch(width = self.width/2.0,
                                                   height = self.height,
                                                   pix_w = self.pix_w,
@@ -169,6 +174,19 @@ class GammaUtility(npr.Screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+
+            # mouse cases
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    # decrease brightness
+                    self.color_index += self.mouse_increment
+                if event.button == 2:
+                    # change coarsness of increment
+                    self.mouse_increment = self.mouse_increment_cycle.next()
+                if event.button == 3:
+                    # increase brightness
+                    self.color_index -= self.mouse_increment
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     #self.print_data()  # could delete this so that info only printed on enter
@@ -179,7 +197,7 @@ class GammaUtility(npr.Screen):
                     self.print_data()
                     return False
 
-                # K_DOWN cases (decreasing brightness)
+                # down arrow cases (decreasing brightness)
                 if event.key == pygame.K_DOWN:
                     mods = pygame.key.get_mods()
 
@@ -194,7 +212,7 @@ class GammaUtility(npr.Screen):
                     else:
                         self.color_index += 1
 
-                # K_UP cases (increasing brightness)
+                # up arrow cases (increasing brightness)
                 if event.key == pygame.K_UP:
                     mods = pygame.key.get_mods()
 
@@ -233,7 +251,6 @@ advance to the next reference patch.  Press "Escape" to exit the program without
 """
 
 if __name__ == '__main__':
-    import math
     import sys
     import os
     import shelve
@@ -243,13 +260,13 @@ if __name__ == '__main__':
     bot_left = (-0.50, -0.25)
     top_right = (0.50, 0.25)
     color_channel    = 'RGB' # can be RGB or R, G, or B alone
-    brightness_ratios = [(1,1), (1,2), (2,1), (1,3), (3,1)]  # (bright, dark)
+    brightness_ratios = [(1,1), (1,2), (2,1), (1,3), (3,1), (1,4), (4,1), (1,5), (5,1), (2,3), (3,2), (10,1), (1,10)]  # (bright, dark)
     monitor_name = 'mbpro_retina'
 
     gammaUtility = GammaUtility.with_pygame_display()
 
     display_output = True
-    inputs = []
+    true_inputs = []
     for brightness in brightness_ratios:
         gammaUtility.setup(bot_left = bot_left,
                        top_right = top_right,
@@ -262,45 +279,39 @@ if __name__ == '__main__':
                       )
         try:
             gammaUtility.run(duration = None)
-            inputs.append(gammaUtility.test_color_current)
+            true_inputs.append(gammaUtility.test_color_current)
         except npr.UserEscape:
             display_output = False
             break
     pygame.quit()
 
+    # ref_values = [vals[0] / sum(vals) for vals in brightness_ratios]
+    # fig = plt.figure(1)
+    # ax1 = fig.add_subplot(111)
+    # ax1.scatter(ref_values, [1 for val in ref_values])
+    # plt.show()
+
     if display_output:
         # get intensity values for each reference ratio
         ref_values = [vals[0] / sum(vals) for vals in brightness_ratios]
 
-        # we know that ref_values[i]**gamma = output_brightness[i]
-        gamma_values = [math.log(inputs[i], ref_values[i]) for i in range(0, len(inputs))]
-
         # hardcoded example values so I don't have to do the experiment every time
-        # inputs = [0.74117647058823533, 0.61960784313725492, 0.83921568627450982, 0.55686274509803924, 0.8784313725490196]
-        # gamma_values = [0.43211101263778523, 0.4357028562931584, 0.43231224248724714, 0.4223031586770879, 0.45055811854634004]
+        # true_inputs = [0.74117647058823533, 0.62352941176470589, 0.83529411764705885, 0.5490196078431373, 0.8784313725490196, 0.49803921568627452, 0.90588235294117647, 0.46274509803921571, 0.92156862745098045, 0.67450980392156867, 0.80000000000000004, 0.95686274509803926, 0.36078431372549025]
+
+        # append 0 and 1 values
+        ref_values.append(0)
+        ref_values.append(1)
+        true_inputs.append(0)
+        true_inputs.append(1)
 
         # get cubic spline function for this info
-        x_range = np.linspace(min(inputs), max(inputs), 100)
-        gam_func = interpolate.interp1d(inputs, gamma_values, kind = 'cubic')
-        interp_gams = [gam_func(x) for x in x_range]
-
-        # pyplot stuff
-        fig = plt.figure(1)
-        ax1 = fig.add_subplot(111)
-        ax1.scatter(inputs, gamma_values)
-        ax1.plot(x_range, interp_gams)
-        ax1.grid(True)
-        ax1.set_xlabel('Input Intensity')
-        ax1.set_ylabel('Gamma')
-        ax1.set_title('Input RGB Intensity vs. Gamma Factor')
-        #plt.xticks([round(out, 3) for out in inputs])
-        #plt.yticks([round(gam, 3) for gam in gamma_values])
-        plt.show()
-
-        print('Final input intensities:')
-        print(inputs)
-        print('Gamma values:')
-        print(gamma_values)
+        x_range = np.linspace(0, 1, 100)
+        inv_gam_func = interpolate.interp1d(ref_values,
+                                        true_inputs,
+                                        kind = 'cubic',
+                                       )
+        # gam_func = interpolate.interp1d(inputs, gamma_values, kind = 'cubic')
+        interp_vals = [inv_gam_func(x) for x in x_range]
 
         # check if calibrations folder exists, make it if not
         home = os.path.expanduser('~')
@@ -314,9 +325,27 @@ if __name__ == '__main__':
         # shelve needed values
         dbPath = os.path.sep.join((home, '.neurodot_present', 'calibrations', monitor_name))
         db = shelve.open(dbPath)
-        db['input_intensities'] = inputs
-        db['gamma_values'] = gamma_values
+        db['input_intensities'] = true_inputs
+        db['desired_intensities'] = ref_values
         db.close()
+
+        # pyplot stuff
+        fig = plt.figure(1)
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(ref_values, true_inputs)
+        ax1.plot(x_range, interp_vals)
+        ax1.grid(True)
+        ax1.set_xlabel('Desired Brightness')
+        ax1.set_ylabel('Input Intensity')
+        ax1.set_title('Inverse Gamma Function')
+        ax1.set_xlim(0,1)
+        ax1.set_ylim(0,1)
+        plt.show()
+
+        print('Desired intensities:')
+        print(ref_values)
+        print('Necessary input intensities:')
+        print(true_inputs)
 
         sys.exit()
 

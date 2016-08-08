@@ -97,16 +97,50 @@ def enable_VBI_sync_osx():
     except Exception as e:
         print("Unable to set vsync mode, using driver defaults: {}".format(e))
 
-def load_gamma_calibration(monitor_name = MONITOR_NAME):
+def load_gamma_calibration(monitor_name = MONITOR_NAME, interp_kind = 'cubic', show_plot = False):
     home = os.path.expanduser('~')
     dbPath = os.path.sep.join((home, '.neurodot_present', 'calibrations', monitor_name))
 
+    # check if calibration file has been created, otherwise shelve.open will make a new .db file
+    if not os.path.isfile(dbPath + '.db'):
+        errorstring = str(dbPath) + '.db does not exist: Create a calibration file with gamma_utility.py first.'
+        raise ValueError(errorstring)
+
+    # get data from .db file
     db = shelve.open(dbPath)
-    inputs = db['input_intensities']
-    gamma_values = db['gamma_values']
+    needed_inputs = db['input_intensities']
+    desired_intensity = db['desired_intensities']
     db.close()
 
-    return scipy.interpolate.interp1d(inputs, gamma_values, kind = 'cubic')
+    # get function from interp1d
+    inv_gam_func = scipy.interpolate.interp1d(desired_intensity, needed_inputs, kind = interp_kind)
+
+    # show plot if needed (this is only for checking data with ipython, will not be needed in actual implementation)
+    if show_plot:
+        x_range = np.linspace(0, 1, 100)
+        experiment_x_vals = inv_gam_func.x
+        experiment_y_vals = inv_gam_func.y
+        interp_vals = [inv_gam_func(x) for x in x_range]
+
+        import matplotlib.pyplot as plt
+        fig = plt.figure(1)
+        ax1 = fig.add_subplot(111)
+        ax1.scatter(experiment_x_vals, experiment_y_vals)
+        ax1.plot(x_range, interp_vals)
+        ax1.grid(True)
+        ax1.set_xlabel('Desired Brightness')
+        ax1.set_ylabel('Input Intensity')
+        ax1.set_title('Inverse Gamma Function')
+        ax1.set_xlim(0,1)
+        ax1.set_ylim(0,1)
+        plt.show()
+
+    return inv_gam_func
+
+def correct_gamma(input_color, monitor_name = MONITOR_NAME, interp_kind = 'linear', **kwargs):
+    inv_gam_func = load_gamma_calibration(monitor_name = monitor_name, interp_kind = interp_kind, **kwargs)
+
+    return(float(inv_gam_func(input_color)))
 
 #-------------------------------------------------------------------------------
 # graphics
