@@ -96,6 +96,7 @@ class GammaUtility(npr.Screen):
               print_output = True
              ):
         npr.Screen.setup(self, background_color = background_color)
+
         self.bot_left = bot_left
         self.top_right = top_right
         self.color_channel = color_channel
@@ -227,6 +228,22 @@ class GammaUtility(npr.Screen):
                     else:
                         self.color_index -= 1
 
+            # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+            elif event.type == pygame.JOYBUTTONDOWN:
+                #print("Joystick button pressed: %r" % event.button)
+                if event.button == 6:
+                    # lower brightness (fine)
+                    self.color_index += 1
+                elif event.button == 4:
+                    # lower brightness (coarse)
+                    self.color_index += int(2**self.color_bits / 8)
+                elif event.button == 7:
+                    # increase brightness (fine)
+                    self.color_index -= 1
+                elif event.button == 5:
+                    # increase brightness (coarse)
+                    self.color_index -= int(2**self.color_bits / 8)
+
         return True
 
     def run(self, **kwargs):
@@ -261,9 +278,13 @@ if __name__ == '__main__':
     top_right = (0.50, 0.25)
     color_channel    = 'RGB' # can be RGB or R, G, or B alone
     brightness_ratios = [(1,1), (1,2), (2,1), (1,3), (3,1), (1,4), (4,1), (1,5), (5,1), (2,3), (3,2), (10,1), (1,10)]  # (bright, dark)
-    monitor_name = 'mbpro_retina'
+    #monitor_name = 'mbpro_retina'
+    #brightness_ratios = [(1,6),(1,5),(1,4),(1,3),(1,2),(1,1),(2,1),(3,1)]  # (bright, dark)[(3,2),(3,1),(4,1),(5,1),(6,1)]#
+    monitor_name = 'benq'
 
-    gammaUtility = GammaUtility.with_pygame_display()
+    gammaUtility = GammaUtility.with_pygame_display( use_joysticks = True,
+                                                     debug = False,
+                                                    )
 
     display_output = True
     true_inputs = []

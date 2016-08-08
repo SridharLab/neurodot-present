@@ -2,6 +2,8 @@
 from __future__ import print_function
 
 import os, time
+from collections import OrderedDict
+
 import numpy as np
 
 import OpenGL.GL as gl
@@ -26,6 +28,7 @@ class Screen:
                             debug = SETTINGS['debug'],
                             hide_mouse = True,
                             VBI_sync_osx = True,
+                            use_joysticks = None,
                            ):
         import pygame
         #start up pygame
@@ -57,6 +60,7 @@ class Screen:
                    constrain_aspect = constrain_aspect,
                    display_surface = surf,
                    run_mode = 'pygame_display',
+                   use_joysticks = use_joysticks
                   )
     @classmethod
     def with_opengl_texture(cls,
@@ -131,6 +135,7 @@ class Screen:
                  constrain_aspect = True,
                  display_surface = None,
                  run_mode = None,
+                 use_joysticks = None,
                  ):
         self.screen_width  = width
         self.screen_height = height
@@ -157,6 +162,21 @@ class Screen:
                                                ))
         self.display_surface = display_surface
         self.run_mode = run_mode
+
+        #detect and initialize joysticks
+        if use_joysticks:
+            import pygame
+            pygame.joystick.init()
+            joystick_nums = []
+            if use_joysticks is True: #initialize all possible joysticks
+                joystick_nums = range(pygame.joystick.get_count())
+            else:                     #assume we were given a sequence of ints
+                joystick_nums = use_joysticks
+            self.joysticks = OrderedDict()
+            # For each joystick
+            for i in joystick_nums:
+                self.joysticks[i] = js = pygame.joystick.Joystick(i)
+                js.init()
 
     def setup(self,
               background_color = "black",
