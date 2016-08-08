@@ -2,6 +2,8 @@
 from __future__ import print_function
 
 import os, time
+from collections import OrderedDict
+
 import numpy as np
 
 import OpenGL.GL as gl
@@ -26,6 +28,7 @@ class Screen:
                             debug = SETTINGS['debug'],
                             hide_mouse = True,
                             VBI_sync_osx = True,
+                            use_joysticks = None,
                            ):
         import pygame
         #start up pygame
@@ -47,6 +50,20 @@ class Screen:
         # hide mouse
         if hide_mouse:
             pygame.mouse.set_visible(False)
+            
+        #detect and initialize joysticks
+        if use_joysticks:
+            pygame.joystick.init()
+            joystick_nums = []
+            if use_joysticks is True: #initialize all possible joysticks
+                joystick_nums = range(pygame.joystick.get_count())
+            else:                     #assume we were given a sequence of ints
+                joystick_nums = use_joysticks
+            self.joysticks = OrderedDict()
+            # For each joystick
+            for i in joystick_nums:
+                self.joysticks[i] = js = pygame.joystick.Joystick(i)
+                js.init()
 
         # OSX: enable vsync/VBI sync/syncing frame buffer swaps to screen refresh
         if VBI_sync_osx:

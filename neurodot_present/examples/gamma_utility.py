@@ -95,6 +95,7 @@ class GammaUtility(npr.Screen):
               print_output = True
              ):
         npr.Screen.setup(self, background_color = background_color)
+        
         self.bot_left = bot_left
         self.top_right = top_right
         self.color_channel = color_channel
@@ -208,8 +209,14 @@ class GammaUtility(npr.Screen):
 
                     else:
                         self.color_index -= 1
+                        
+            # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+            elif event.type == pygame.JOYBUTTONDOWN:
+                print("Joystick button pressed: %r" % event.button)
+            
 
         return True
+        
 
     def run(self, **kwargs):
         # loop rate set too high so that it should run effectively as fast as python is capable of looping
@@ -243,10 +250,12 @@ if __name__ == '__main__':
     bot_left = (-0.50, -0.25)
     top_right = (0.50, 0.25)
     color_channel    = 'RGB' # can be RGB or R, G, or B alone
-    brightness_ratios = [(1,1), (1,2), (2,1), (1,3), (3,1)]  # (bright, dark)
-    monitor_name = 'mbpro_retina'
+    brightness_ratios = [(1,6),(1,5),(1,4),(1,3),(1,2),(1,1),(2,1),(3,1)]  # (bright, dark)[(3,2),(3,1),(4,1),(5,1),(6,1)]#
+    monitor_name = 'benq'
 
-    gammaUtility = GammaUtility.with_pygame_display()
+    gammaUtility = GammaUtility.with_pygame_display( use_joysticks = True,
+                                                     debug = True,
+                                                    )
 
     display_output = True
     inputs = []
@@ -276,12 +285,12 @@ if __name__ == '__main__':
         gamma_values = [math.log(inputs[i], ref_values[i]) for i in range(0, len(inputs))]
 
         # hardcoded example values so I don't have to do the experiment every time
-        # inputs = [0.74117647058823533, 0.61960784313725492, 0.83921568627450982, 0.55686274509803924, 0.8784313725490196]
-        # gamma_values = [0.43211101263778523, 0.4357028562931584, 0.43231224248724714, 0.4223031586770879, 0.45055811854634004]
+        #inputs = [0.28627450980392155, 0.32156862745098036, 0.36862745098039218, 0.44705882352941173, 0.56470588235294117, 0.76078431372549016, 0.88627450980392153, 0.9137254901960784]
+        #gamma_values = [0.6427861556800382, 0.6332012289478619, 0.6200728559818146, 0.5807317113470583, 0.5201564295946632, 0.39444059467173037, 0.2977532307266597, 0.31362778647893835]
 
         # get cubic spline function for this info
-        x_range = np.linspace(min(inputs), max(inputs), 100)
-        gam_func = interpolate.interp1d(inputs, gamma_values, kind = 'cubic')
+        x_range = np.linspace(0.0, 1.0, 100)
+        gam_func = interpolate.interp1d(inputs, gamma_values, kind = 'linear', fill_value="extrapolate", bounds_error=False)
         interp_gams = [gam_func(x) for x in x_range]
 
         # pyplot stuff
