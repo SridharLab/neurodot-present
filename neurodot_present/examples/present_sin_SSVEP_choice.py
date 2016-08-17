@@ -35,6 +35,7 @@ if __name__ == "__main__":
     CUE_DURATION   = 1
     FLASH_DURATION = 5  # seconds
 
+
     try:
         # ensure that video mode is at the maxium FPS
         system_set_resolution(refresh_rate  = "144")
@@ -95,6 +96,7 @@ if __name__ == "__main__":
                        flash_rate_right = rateR,
                        flash_rate_center = None,
                        show_fixation_dot = True,
+		       screen_background_color = (common.correct_gamma(0.5), common.correct_gamma(0.5), common.correct_gamma(0.5))
                       )
             cueScreen.setup(background_color = 'neutral-gray',
                             fixation_cross = FC
