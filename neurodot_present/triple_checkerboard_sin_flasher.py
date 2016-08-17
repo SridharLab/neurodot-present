@@ -6,7 +6,7 @@ import OpenGL.GL as gl
 import numpy as np
 
 #local imports
-from common import DEFAULT_FLASH_RATE
+from common import DEFAULT_FLASH_RATE, correct_gamma
 
 from screen import Screen
 
@@ -150,8 +150,10 @@ class TripleCheckerBoardSinFlasher(Screen):
             def color_func(t):
                 te = t - start_time # compute elapsed time
                 cos_term = np.cos(flash_rate * np.pi * te) / 2.0
-                c1 = (-cos_term + 0.5)**inv_gamma
-                c2 = ( cos_term + 0.5)**inv_gamma
+                #c1 = (-cos_term + 0.5)**inv_gamma
+		c1 = correct_gamma(-cos_term + 0.5, interp_kind = 'cubic')                
+		#c2 = ( cos_term + 0.5)**inv_gamma
+		c2 = correct_gamma(cos_term + 0.5, interp_kind = 'cubic')
                 return ((c1,c1,c1), (c2,c2,c2))
         elif shape == "square":
             def color_func(t):

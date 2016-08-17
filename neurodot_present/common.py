@@ -102,8 +102,8 @@ def load_gamma_calibration(monitor_name = MONITOR_NAME, interp_kind = 'cubic', s
     dbPath = os.path.sep.join((home, '.neurodot_present', 'calibrations', monitor_name))
 
     # check if calibration file has been created, otherwise shelve.open will make a new .db file
-    if not os.path.isfile(dbPath + '.db'):
-        errorstring = str(dbPath) + '.db does not exist: Create a calibration file with gamma_utility.py first.'
+    if not os.path.isfile(dbPath):
+        errorstring = str(dbPath) + 'does not exist: Create a calibration file with gamma_utility.py first.'
         raise ValueError(errorstring)
 
     # get data from .db file
