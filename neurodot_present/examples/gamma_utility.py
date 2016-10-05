@@ -231,7 +231,7 @@ class GammaUtility(npr.Screen):
             # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
             elif event.type == pygame.JOYBUTTONDOWN:
                 print("Joystick button pressed: %r" % event.button)
-                if event.button == 6:
+                if event.button == 6 or event.button == 0:
                     # lower brightness (fine)
                     self.color_index += 1
                 elif event.button == 4:
@@ -372,17 +372,3 @@ if __name__ == '__main__':
         print(true_inputs)
 
         sys.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-

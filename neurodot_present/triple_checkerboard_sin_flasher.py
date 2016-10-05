@@ -6,7 +6,7 @@ import OpenGL.GL as gl
 import numpy as np
 
 #local imports
-from common import DEFAULT_FLASH_RATE
+from common import DEFAULT_FLASH_RATE, correct_gamma
 
 from screen import Screen
 

@@ -44,6 +44,7 @@ if __name__ == "__main__":
 
 
 
+
     try:
         # ensure that video mode is at the maxium FPS
         system_set_resolution(refresh_rate  = "144")
