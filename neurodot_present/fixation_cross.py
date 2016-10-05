@@ -21,7 +21,7 @@ class FixationCross:
         self.position = x,y = position
         self.size  = size
         self.thickness = thickness
-        self.color = COLORS[color]
+        self.color = COLORS.get(color,color)
         self.vertices = [#horizontal beam
                          (x - size/2.0, y + thickness/2),  #left-top
                          (x - size/2.0, y - thickness/2),  #left-bottom

@@ -7,6 +7,8 @@ import OpenGL.GLU as glu
 #local imports
 from common import COLORS
 
+from screen import Screen
+
 class CheckerBoard:
     def __init__(self,
                  nrows,
@@ -14,16 +16,22 @@ class CheckerBoard:
                  check_height = None,
                  color1 = COLORS['white'],
                  color2 = COLORS['black'],
-                 show_fixation_dot = False
+                 fixation_dot_color = None,
                  ):
         self.nrows = int(nrows)
+        if check_width is None:
+            check_width = 2.0/nrows #fill whole screen
         self.check_width = check_width
         if check_height is None:
             check_height = check_width
         self.check_height = check_height
+        self.board_width = check_width*nrows
+        #run colors through filter to catch names and convert to RGB
+        color1 = COLORS.get(color1, color1)
+        color2 = COLORS.get(color2, color2)
         self.color1 = color1
         self.color2 = color2
-        self.show_fixation_dot = show_fixation_dot
+        self.fixation_dot_color = fixation_dot_color
         self.display_list_multi = None  #for cached rendering of multiple display lists, leaving ability to change color
 
     def render(self):
@@ -38,7 +46,7 @@ class CheckerBoard:
             board_height = h * self.nrows
 
             # get needed display list ints
-            if self.show_fixation_dot:
+            if self.fixation_dot_color:
                 self.num_lists = 3  # include list for fixation dot
             else:
                 self.num_lists = 2
@@ -75,10 +83,10 @@ class CheckerBoard:
                 gl.glEndList()
 
             # create list for fixation dot
-            if self.show_fixation_dot:
+            if not self.fixation_dot_color is None:
                 gl.glNewList(self.display_list_multi + 2, gl.GL_COMPILE)
                 gl.glDisable(gl.GL_LIGHTING)
-                r, g, b = COLORS['red']
+                r, g, b = self.fixation_dot_color
                 gl.glColor3f(r, g, b)
                 gl.glTranslatef(board_width / 2.0, board_height / 2.0, 0)
                 glu.gluDisk(glu.gluNewQuadric(), 0, 0.005, 45, 1)
@@ -101,7 +109,7 @@ class CheckerBoard:
         gl.glCallList(self.display_list_multi + 1)
 
         # render fixation dot
-        if self.show_fixation_dot:
+        if not self.fixation_dot_color is None:
             gl.glCallList(self.display_list_multi + 2)
 
     def __del__(self):
@@ -110,4 +118,54 @@ class CheckerBoard:
             gl.glDeleteLists(self.display_list_multi, self.num_lists)
         except AttributeError:
             pass
+            
+class CheckerBoardScreen(Screen):
+    def setup(self,
+              nrows,
+              check_width = None,
+              check_color1 = 'white',
+              check_color2 = 'black',
+              screen_background_color = 'neutral-gray',
+              fixation_dot_color = False,
+              pos_x = None, 
+              pos_y = None,
+              vsync_value = None,
+              vsync_patch = "bottom-right",
+             ):
+        Screen.setup(self,
+                     background_color = screen_background_color,
+                     vsync_value = vsync_value,
+                     vsync_patch = vsync_patch,
+                     )
+        
+        self.CB = CheckerBoard(nrows = nrows,
+                               check_width = check_width,
+                               color1 = check_color1,
+                               color2 = check_color2,
+                               fixation_dot_color = fixation_dot_color
+                              )
+                             
+        if pos_x is None:
+            pos_x = -0.5*self.CB.board_width
+        if pos_y is None:
+            pos_y = -0.5*self.CB.board_width
+            
+        self.pos_x = pos_x
+        self.pos_y = pos_y
 
+    def render(self):
+        Screen.render(self)
+        #move so that board is centered and render
+        gl.glLoadIdentity()
+        gl.glTranslatef(self.pos_x,self.pos_y,0.0)
+        self.CB.render()
+        
+################################################################################
+# TEST CODE
+################################################################################
+if __name__ == "__main__":
+    CBS = Screen.with_pygame_display(debug = True)
+    CBS.setup(background_color = "neutral-gray",
+              vsync_value = 1
+             )
+    CBS.run(duration = 5)

@@ -37,7 +37,6 @@ class DoubleCheckerBoardFlasher(Screen):
         Screen.setup(self,
                      background_color = screen_background_color,
                      vsync_patch = vsync_patch,
-                     
                      )
 
         #run colors through filter to catch names and convert to RGB

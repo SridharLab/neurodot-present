@@ -24,7 +24,7 @@ class TripleCheckerBoardSinFlasher(Screen):
               flash_rate_right = DEFAULT_FLASH_RATE,
               flash_rate_center = DEFAULT_FLASH_RATE,
               #rate_compensation = None,
-              inv_gamma = 0.43,
+              inv_gamma_func = None,
               vsync_patch = 'bottom-right',
              ):
         Screen.setup(self,
@@ -61,7 +61,7 @@ class TripleCheckerBoardSinFlasher(Screen):
         if self.render_center:
             self.flash_rate_center = flash_rate_center
         #self.rate_compensation = rate_compensation
-        self.inv_gamma = inv_gamma #for removing gamma correction
+        self.inv_gamma_func = inv_gamma_func #for removing gamma correction
 
         # get useful coordinate values for checkerboard rendering locations
         self.xC, self.yC = (-0.5*self.board_width,-0.5*self.board_width)
@@ -78,17 +78,17 @@ class TripleCheckerBoardSinFlasher(Screen):
         self._color_func_left   = self._get_color_func(start_time = t,
                                                        flash_rate = self.flash_rate_left,
                                                        shape = "sin",
-                                                       inv_gamma = self.inv_gamma,
+                                                       inv_gamma_func = self.inv_gamma_func,
                                                       )
         self._color_func_right  = self._get_color_func(start_time = t,
                                                        flash_rate = self.flash_rate_right,
                                                        shape = "sin",
-                                                       inv_gamma = self.inv_gamma,
+                                                       inv_gamma_func = self.inv_gamma_func,
                                                       )
         self._color_func_center = self._get_color_func(start_time = t,
                                                        flash_rate = self.flash_rate_center,
                                                        shape = "square",
-                                                       inv_gamma = self.inv_gamma,
+                                                       inv_gamma_func = self.inv_gamma_func,
                                                       )
 
     def render(self):
@@ -138,7 +138,7 @@ class TripleCheckerBoardSinFlasher(Screen):
                         start_time,
                         flash_rate,
                         shape="sin",
-                        inv_gamma = 0.43,
+                        inv_gamma_func = None,
                        ):
         color_func = None
         # get color functions
@@ -150,8 +150,11 @@ class TripleCheckerBoardSinFlasher(Screen):
             def color_func(t):
                 te = t - start_time # compute elapsed time
                 cos_term = np.cos(flash_rate * np.pi * te) / 2.0
-                c1 = (-cos_term + 0.5)**inv_gamma
-                c2 = ( cos_term + 0.5)**inv_gamma
+                c1 = (-cos_term + 0.5)
+                c2 = ( cos_term + 0.5)
+                if not inv_gamma_func is None:
+                    c1 = float(inv_gamma_func(c1))
+                    c2 = float(inv_gamma_func(c2))
                 return ((c1,c1,c1), (c2,c2,c2))
         elif shape == "square":
             def color_func(t):
@@ -188,8 +191,9 @@ if __name__ == "__main__":
                                                             #display_mode = (512,512),
                                                             #debug = True,
                                                          )
-
-    #TCBF = TripleCheckerBoardFlasher.with_psychopy_window()
+    from common import load_gamma_calibration
+    inv_gamma_func = load_gamma_calibration(monitor_name = "benq-gamer1", interp_kind = "cubic")
+    #inv_gamma_func = None
     TCBF.setup(flash_rate_left = flash_rate_left,
                flash_rate_right = flash_rate_right,
                flash_rate_center = flash_rate_center,
@@ -199,7 +203,7 @@ if __name__ == "__main__":
                nrows = nrows,
                nrows_center = nrows_center,
                show_fixation_dot = True,
-               inv_gamma = inv_gamma,
+               inv_gamma_func = inv_gamma_func,
               )
 
 #-------------------------------------------------------------------------------
@@ -230,8 +234,10 @@ if __name__ == "__main__":
 
     if show_plot:
         t_diffs = np.diff(np.array(TCBF.t_list))
+        mean_sample_freq = 1.0/t_diffs.mean()
+        
         print('Mean sample interval: ', t_diffs.mean())
-        print('Mean sample frequency:', 1.0/t_diffs.mean())
+        print('Mean sample frequency:', mean_sample_freq)
         print('Sample interval STD:  ', t_diffs.std())
 
         import matplotlib.pyplot as plt
@@ -239,13 +245,15 @@ if __name__ == "__main__":
         plt.scatter(TCBF.t_list, TCBF.r1_list, color = 'red', label = 'Displayed')
         time_vals = np.linspace(0, duration, duration * 720)
         #trig_vals = [(-1.0 * np.cos(TCBF.flash_rate_left * 2.0 * np.pi * t) / 2.0 + 0.5) for t in time_vals]
-        trig_vals = [(-1.0 * np.cos(TCBF.flash_rate_left * np.pi * t) / 2.0 + 0.5)**0.43 for t in time_vals]
+        if inv_gamma_func is None:
+            inv_gamma_func = lambda x:x
+        trig_vals = [inv_gamma_func(-1.0 * np.cos(TCBF.flash_rate_left * np.pi * t) / 2.0 + 0.5) for t in time_vals]
         plt.plot(time_vals, trig_vals, color = 'blue', label = 'Ideal')
         plt.legend()#loc = 'best')
 
         plt.subplot(2,1,2)
         fft_data = abs(np.fft.rfft(TCBF.r1_list))
-        fft_freqs = np.fft.rfftfreq(len(TCBF.r1_list), 1.0/140)
+        fft_freqs = np.fft.rfftfreq(len(TCBF.r1_list), 1.0/mean_sample_freq)
         plt.plot(fft_freqs, fft_data)
         plt.scatter(fft_freqs, fft_data)
         plt.show()

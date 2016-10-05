@@ -14,7 +14,7 @@ import ctypes
 
 #local imports
 from common import SETTINGS,COLORS, SCREEN_LB, SCREEN_LT, SCREEN_RB, SCREEN_RT,\
-                   Quad, UserEscape, png_file_write, enable_VBI_sync_osx
+                   Quad, UserEscape, write_frame_to_png, enable_VBI_sync_osx
 
 from vsync_patch import VsyncPatch
 from fixation_cross import FixationCross
@@ -183,10 +183,26 @@ class Screen:
               vsync_value  = None,
               vsync_patch  = "bottom-right",
               fixation_cross = None,
+              exit_keys = None,
              ):
 
-        #gl.glShadeModel(gl.GL_SMOOTH)
         self.background_color = COLORS.get(background_color, background_color)
+
+        self.vsync_value = vsync_value
+        if vsync_patch == "bottom-right":
+            #define the vsync patch as being in the bottom right corner
+            self.vsync_patch = VsyncPatch.make_bottom_right(screen_bottom = self.screen_bottom,
+                                                            screen_right  = self.screen_right)
+        else:
+            self.vsync_patch = vsync_patch
+        self.fixation_cross = fixation_cross
+        self.exit_value = None
+        if exit_keys is None:
+            exit_keys = []
+        self.exit_keys = exit_keys
+        
+    def start_rendering(self):
+        #gl.glShadeModel(gl.GL_SMOOTH)
         r,g,b = self.background_color
         gl.glClearColor(r,g,b,1.0)
         gl.glClearDepth(1.0)
@@ -202,16 +218,6 @@ class Screen:
         gl.glLoadIdentity()
         #project to a 2D perspective
         glu.gluOrtho2D(self.screen_left, self.screen_right, self.screen_bottom, self.screen_top)
-
-        self.vsync_value = vsync_value
-        if vsync_patch == "bottom-right":
-            #define the vsync patch as being in the bottom right corner
-            self.vsync_patch = VsyncPatch.make_bottom_right(screen_bottom = self.screen_bottom,
-                                                            screen_right  = self.screen_right)
-        else:
-            self.vsync_patch = vsync_patch
-
-        self.fixation_cross = fixation_cross
         self.ready_to_render = True
 
     def render(self):
@@ -263,16 +269,15 @@ class Screen:
         if not vsync_value is None:
             vsync_value = int(vsync_value)
             assert( 0 <= vsync_value <= 16)
-        self.vsync_value = vsync_value
+            self.vsync_value = vsync_value
 
         clock = pygame.time.Clock()
         t      = time.time()
         last_t = t
         is_running = True
         self.start_time(t)
-
+        self.start_rendering()
         #render the scene to the buffer
-        self.render()
         while is_running:
             t = time.time()
             dt = t - last_t
@@ -341,7 +346,7 @@ class Screen:
                 print("%d%% complete (%d s)" % (percent_complete, realtime - realtime0))
             #record the scene
             pixel_data = gl.glReadPixels(0,0,w,h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
-            png_file_write(recording_name, frame_num, w, h, data = pixel_data)
+            write_frame_to_png("frame", frame_num, w, h, data = pixel_data, outdir=recording_name)
             #show the scene
             if show:
                 pygame.display.flip()
@@ -349,7 +354,7 @@ class Screen:
             t += dt
             #handle outstanding events
             is_running = self.pygame_handle_events()
-            if t - self.t0 > duration:
+            if t - self.t0 > duration and not duration is None:
                 is_running = False
             #update the scene model
             self.update(t, dt)
@@ -419,34 +424,44 @@ class Screen:
             elif event.type == pygame.KEYDOWN:
                 if (event.key == pygame.K_ESCAPE) and (not mask_user_escape):
                     raise UserEscape
+                for key in self.exit_keys:
+                    if (event.key == key):
+                        self.exit_value = event.key
+                        return False
         return True
 
 
-def run_start_sequence(fixation_cross = None, **kwargs):
+def run_start_sequence(fixation_cross = None,
+                       default_screen_color = "black",
+                       start_screen_color = "green",
+                       **kwargs):
     if fixation_cross is None:
         fixation_cross = FixationCross()
     #instantiate screens
-    black_SCR = Screen.with_pygame_display(**kwargs)
-    black_SCR.setup(background_color = "black",fixation_cross = fixation_cross)
-    green_SCR = Screen.with_pygame_display(**kwargs)
-    green_SCR.setup(background_color = "green",fixation_cross = fixation_cross)
+    default_SCR = Screen.with_pygame_display(**kwargs)
+    default_SCR.setup(background_color = default_screen_color,fixation_cross = fixation_cross)
+    start_SCR = Screen.with_pygame_display(**kwargs)
+    start_SCR.setup(background_color = start_screen_color,fixation_cross = fixation_cross)
     #run sequence
-    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    green_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)  #begins the start frame
-    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    black_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
-    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    start_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)  #begins the start frame
+    default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    default_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
+    default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
 
-def run_stop_sequence(fixation_cross = None, **kwargs):
+def run_stop_sequence(fixation_cross = None, 
+                      default_screen_color = "black",
+                      stop_screen_color = "red",
+                      **kwargs):
     #instantiate screens
-    black_SCR = Screen.with_pygame_display(**kwargs)
-    black_SCR.setup(background_color = "black", fixation_cross = fixation_cross)
-    red_SCR   = Screen.with_pygame_display(**kwargs)
-    red_SCR.setup(background_color = "red", fixation_cross = fixation_cross)
+    default_SCR = Screen.with_pygame_display(**kwargs)
+    default_SCR.setup(background_color = default_screen_color, fixation_cross = fixation_cross)
+    stop_SCR   = Screen.with_pygame_display(**kwargs)
+    stop_SCR.setup(background_color = stop_screen_color, fixation_cross = fixation_cross)
     #run sequence
-    black_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
-    black_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    red_SCR.run(duration = 0, vsync_value = 5, wait_on_user_escape = True)
+    default_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
+    default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
+    stop_SCR.run(duration = 0, vsync_value = 5, wait_on_user_escape = True)
 
 ################################################################################
 # TEST CODE

@@ -6,11 +6,12 @@ import itertools
 #import neurodot_present.present_lib as pl
 import neurodot_present.common as common
 import neurodot_present.screen as screen
-from neurodot_present.common import UserEscape
+from neurodot_present.common import UserEscape, load_gamma_calibration
 from neurodot_present.triple_checkerboard_sin_flasher import TripleCheckerBoardSinFlasher
 from neurodot_present.screen import Screen
 from neurodot_present.fixation_cross import FixationCross
 from subprocess import call
+
 
 common.DEBUG = False
 
@@ -34,6 +35,14 @@ if __name__ == "__main__":
     PAUSE_DURATION = 1
     CUE_DURATION   = 1
     FLASH_DURATION = 5  # seconds
+    
+    #inv_gamma_func = load_gamma_calibration(monitor_name = "benq-gamer1", interp_kind = "cubic")
+    #c = float(inv_gamma_func(0.5))
+    c = 0.5
+    inv_gamma_func = None
+    NEUTRAL_GRAY =(c,c,c)
+
+
 
     try:
         # ensure that video mode is at the maxium FPS
@@ -49,6 +58,7 @@ if __name__ == "__main__":
         DCBF = TripleCheckerBoardSinFlasher.with_pygame_display()
         DCBF.setup(nrows = CHECKERBOARD_NROWS,
                    check_width = CHECK_WIDTH,
+                   
                    ) # running setup just to get coordinates for FCs
 
         # instantiate fixation crosses
@@ -80,7 +90,7 @@ if __name__ == "__main__":
         screen.run_start_sequence()
 
         # begin experiment with centered fixation cross
-        pauseScreen.setup(background_color = 'neutral-gray',
+        pauseScreen.setup(background_color = NEUTRAL_GRAY,
                           fixation_cross = FC_center,
                           )
         pauseScreen.run(duration = PAUSE_DURATION, vsync_value = 0)
@@ -95,8 +105,9 @@ if __name__ == "__main__":
                        flash_rate_right = rateR,
                        flash_rate_center = None,
                        show_fixation_dot = True,
+                       inv_gamma_func = inv_gamma_func
                       )
-            cueScreen.setup(background_color = 'neutral-gray',
+            cueScreen.setup(background_color = NEUTRAL_GRAY,
                             fixation_cross = FC
                             )
 
@@ -108,7 +119,7 @@ if __name__ == "__main__":
             trial_counter += 1
             if trial_counter%REST_EVERY == 0 and not trial_counter == NUM_TRIALS:
                 common.bell()
-                restScreen.setup(background_color = 'neutral-gray')
+                restScreen.setup(background_color = NEUTRAL_GRAY)
                 restScreen.run(duration = 8, vsync_value = 0)
                 common.bell()
                 restScreen.run(duration = 2, vsync_value = 0)

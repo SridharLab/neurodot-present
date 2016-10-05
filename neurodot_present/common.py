@@ -58,13 +58,21 @@ def bell(blocking=False):
     if blocking:
         while ch.get_busy():
             pygame.time.delay(100)
+            
+def sound_alarm(blocking=False):
+    pygame.mixer.init()
+    bell_sound = pygame.mixer.Sound(resources.get_bellpath("Alien_Siren-KevanGC.wav"))
+    ch = bell_sound.play()
+    if blocking:
+        while ch.get_busy():
+            pygame.time.delay(100)
 
 class UserEscape(Exception):
     def __init__(self, msg = "User stopped the sequence"):
         Exception.__init__(self, msg)
 
 # write a png file from GL framebuffer data
-def png_file_write(name, frame_num, w, h, data, outdir = None):
+def write_frame_to_png(name, frame_num, w, h, data, outdir = None):
     im = Image.frombuffer("RGBA", (w,h), data, "raw", "RGBA", 0, 0)
     fname = "%s_%05d.png" % (name,frame_num)
     if outdir is None:
@@ -102,8 +110,8 @@ def load_gamma_calibration(monitor_name = MONITOR_NAME, interp_kind = 'cubic', s
     dbPath = os.path.sep.join((home, '.neurodot_present', 'calibrations', monitor_name))
 
     # check if calibration file has been created, otherwise shelve.open will make a new .db file
-    if not os.path.isfile(dbPath + '.db'):
-        errorstring = str(dbPath) + '.db does not exist: Create a calibration file with gamma_utility.py first.'
+    if not os.path.isfile(dbPath):
+        errorstring = str(dbPath) + ' does not exist: Create a calibration file with gamma_utility.py first.'
         raise ValueError(errorstring)
 
     # get data from .db file
