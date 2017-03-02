@@ -219,21 +219,25 @@ class Screen:
         #project to a 2D perspective
         glu.gluOrtho2D(self.screen_left, self.screen_right, self.screen_bottom, self.screen_top)
         self.ready_to_render = True
-
-    def render(self):
+        
+    def render_before(self):
         #prepare rendering model
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
         gl.glDisable(gl.GL_TEXTURE_2D)
-        #self.screen_quad.render()
-
+            
+    def render_after(self):
         if not self.fixation_cross is None:
             self.fixation_cross.render()
         #render the vsync patch
         if not self.vsync_patch is None:
             #print("vsync_patch.render: %s" % self.vsync_value)
             self.vsync_patch.render(value = self.vsync_value)
+
+    def render(self):
+        self.render_before()
+        self.render_after()
 
     def start_time(self, t):
         self.t0 = t

@@ -67,12 +67,14 @@ class CheckerBoardFlasherScreen(Screen):
         self._current_CB = self.CB_cycle.next()
 
     def render(self):
-        # do general OpenGL stuff as well as FixationCross and Vsync Patch if needed
-        Screen.render(self)
+        # do general OpenGL stuff 
+        Screen.render_before(self)
         # translate to position of left board and render
         gl.glLoadIdentity()
         gl.glTranslatef(self.xC, self.yC, 0.0)
         self._current_CB.render()
+        # do FixationCross and Vsync Patch if needed
+        Screen.render_after(self)
 
     def update(self, t, dt):
         self.ready_to_render = False
