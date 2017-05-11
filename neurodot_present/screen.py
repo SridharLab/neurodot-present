@@ -16,8 +16,10 @@ import ctypes
 from common import SETTINGS,COLORS, SCREEN_LB, SCREEN_LT, SCREEN_RB, SCREEN_RT,\
                    Quad, UserEscape, write_frame_to_png, enable_VBI_sync_osx
 
-from vsync_patch import VsyncPatch
 from fixation_cross import FixationCross
+
+#delay configurable class loading
+import neurodot_present
 
 
 class Screen:
@@ -190,6 +192,7 @@ class Screen:
 
         self.vsync_value = vsync_value
         if vsync_patch == "bottom-right":
+            VsyncPatch = neurodot_present.get_class_VsyncPatch()
             #define the vsync patch as being in the bottom right corner
             self.vsync_patch = VsyncPatch.make_bottom_right(screen_bottom = self.screen_bottom,
                                                             screen_right  = self.screen_right)
@@ -233,7 +236,7 @@ class Screen:
         #render the vsync patch
         if not self.vsync_patch is None:
             #print("vsync_patch.render: %s" % self.vsync_value)
-            self.vsync_patch.render(value = self.vsync_value)
+            self.vsync_patch.render()
 
     def render(self):
         self.render_before()
@@ -241,8 +244,11 @@ class Screen:
 
     def start_time(self, t):
         self.t0 = t
+        self.vsync_patch.start_time(t, vsync_value = self.vsync_value)
 
     def update(self, t, dt):
+        self.vsync_patch.update(t,dt)
+    
         # ensure rendering and display flipping will occur
         self.ready_to_render = True
 

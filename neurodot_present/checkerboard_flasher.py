@@ -77,9 +77,12 @@ class CheckerBoardFlasherScreen(Screen):
         Screen.render_after(self)
 
     def update(self, t, dt):
-        self.ready_to_render = False
+        Screen.update(self, t, dt) #important, this handles vsync updates
+        
+        #we need to render if the vsync patch is ready
+        self.ready_to_render = self.vsync_patch.ready_to_render
 
-        # only update a checkerboard if its flash_interval has elapsed
+        # otherwise, only update a checkerboard if its flash_interval has elapsed
         if (t - self._last_CB_change_time) >= self.flash_interval:
             self._last_CB_change_time = t
             self._current_CB = self.CB_cycle.next()
@@ -93,12 +96,40 @@ class CheckerBoardFlasherScreen(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
+    import sys
+    
+    #ensure that video mode is at the maxium FPS
+    if sys.platform.startswith("linux"):
+        from subprocess import call
+        call(["xrandr","-r","144"])
+
+    import neurodot_present
+    neurodot_present.settings['vsync_version'] = 2
     CBFscreen = CheckerBoardFlasherScreen.with_pygame_display(
                                                               #display_mode = (512,512),
-                                                              debug = True
+                                                              #debug = True
                                                              )
     CBFscreen.setup(nrows = 64, 
-                    flash_rate = 19,
+                    flash_rate = 20,
                     )
-    CBFscreen.run(duration = 10.0)
+    CBFscreen.run(duration = 1.0, vsync_value = 0)
+    #CBFscreen.run(duration = 5.0, vsync_value = 1)
+    #CBFscreen.run(duration = 5.0, vsync_value = 2)
+    #CBFscreen.run(duration = 5.0, vsync_value = 3)
+    while True:
+        for i in range(14):
+            CBFscreen.run(duration = 1.0, vsync_value = i)
+   
+#    CBFscreen.run(duration = 5.0, vsync_value = 5)
+#    CBFscreen.run(duration = 5.0, vsync_value = 6)
+#    CBFscreen.run(duration = 5.0, vsync_value = 7)
+#    CBFscreen.run(duration = 5.0, vsync_value = 8)
+#    CBFscreen.run(duration = 5.0, vsync_value = 9)
+#    CBFscreen.run(duration = 5.0, vsync_value = 10)
+#    CBFscreen.run(duration = 5.0, vsync_value = 11)
+#    CBFscreen.run(duration = 5.0, vsync_value = 12)
+#    CBFscreen.run(duration = 5.0, vsync_value = 13)
+#    CBFscreen.run(duration = 5.0, vsync_value = 14)
+#    CBFscreen.run(duration = 5.0, vsync_value = 15)
+#    CBFscreen.run(duration = 5.0, vsync_value = 16)
     #CBF.pygame_recording_loop(duration = 10.0, frame_rate = 2000, recording_name = "CBF")
