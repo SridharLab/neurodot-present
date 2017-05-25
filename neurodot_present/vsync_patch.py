@@ -99,7 +99,12 @@ class VsyncPatch_Version1:
         return obj
         
 class VsyncPatch_Version2:
-    SEGMENTS_PER_PULSE = 3
+    """  The vSync code is sent as a timing between the start of two white 
+         pulses, pulse_interval = VSYNC_TIMING_BASE*VSYNC_CODE.
+    """
+    
+    PULSE_DURATION    = 4.0/60.0 #4 frames at 60 FPS
+    VSYNC_TIMING_BASE = 4.0/60.0 #4 frames at 60 FPS
 
     def __init__(self, left, bottom, width, height,
                  on_color  = COLORS['white'],
@@ -119,42 +124,48 @@ class VsyncPatch_Version2:
         self.off_color = off_color
         self.ready_to_render = False
         self.t0 = None
-        self._pulse_segment_interval = 1.0/(display_rate*self.SEGMENTS_PER_PULSE)
-        self._pulse_segment_color = None
-        self._pulse_segment_count = None
+        self._patch_color = None
+        self._pulse_active = False
+        self._pulse_interval = None
         
-    def start_time(self, t, vsync_value = 0):
+    def start_time(self, t, vsync_value):
         self.t0 = t
-        self._last_pulse_segment_time = t
         
         if vsync_value > 0:
-            #important restart color cycle
-            self._pulse_segment_count = self.SEGMENTS_PER_PULSE*vsync_value
-            self._pulse_segment_color = self.on_color
+            #begin the first pulse
+            self._pulse_active = True
+            self._patch_color = self.on_color
+            self._pulse_interval = vsync_value*self.VSYNC_TIMING_BASE + self.PULSE_DURATION
+            self._start_of_pulse_time = t
+            #print("START:",t)
+            #print("\tpulse_interval =",self._pulse_interval)
         else:
-            self._pulse_segment_count = 0
-            self._pulse_segment_color = self.off_color
+            self._patch_color = self.off_color
+            self._pulse_interval = None
+            self._pulse_active = False
         
         self.ready_to_render = True
 
     def update(self, t, dt):
-        #only update when ready
-        self.ready_to_render = False
-
-        # only update if the pulse interval has elapsed and there are remaining segments
-        if self._pulse_segment_count > 0:
-            pdt = t - self._last_pulse_segment_time
-            if ( pdt >= self._pulse_segment_interval):
-                self._last_pulse_time = t
-                rem = self._pulse_segment_count % self.SEGMENTS_PER_PULSE
-                if rem == 0: #start of pulse
-                    self._pulse_segment_color = self.on_color
-                else: #rest of pulse is OFF, a little extra time needed to allow VSYNC signal to recover
-                    self._pulse_segment_color = self.off_color
-                    
-                print(t, pdt, self._pulse_segment_color)
-                self._pulse_segment_count -= 1
+        #control the pulse display when it is active
+        if self._pulse_active:
+            self.ready_to_render = True
+            pdt = t - self._start_of_pulse_time
+            if ( pdt >= self.PULSE_DURATION): #pulse period is over
+                #print("PULSE OFF:",t - self.t0)
+                self._pulse_active = False
+                self._patch_color = self.off_color
+        elif (not self._pulse_interval is None):
+            pdt = t - self._start_of_pulse_time
+            if ( pdt >= self._pulse_interval): #begin final pulse
+                #print("END:",t - self.t0)
+                self._pulse_active = True
+                self._patch_color = self.on_color
+                self._pulse_interval = None #invalidate for rest of epoch
+                self._start_of_pulse_time = t
                 self.ready_to_render = True
+        else:
+            self.ready_to_render = False
 
     def render(self):
         left, bottom, width, height = (self.left,self.bottom,self.width,self.height)
@@ -163,16 +174,16 @@ class VsyncPatch_Version2:
 
         try:
             #bit 0, sub square at bottom/right corner, also the vsync trigger bit
-            gl.glColor3f(*self._pulse_segment_color)
+            gl.glColor3f(*self._patch_color)
             gl.glRectf(left + width/2.0, bottom,  left + width, bottom + height/2.0) #left,bottom -> right,top
             #bit 1, sub square at bottom/left corner
-            gl.glColor3f(*self._pulse_segment_color)
+            gl.glColor3f(*self._patch_color)
             gl.glRectf(left, bottom,left + width/2.0, bottom + height/2.0) #left,bottom -> right,top
             #bit 2, sub square at top/left corner
-            gl.glColor3f(*self._pulse_segment_color)
+            gl.glColor3f(*self._patch_color)
             gl.glRectf(left, bottom + height/2.0,left + width/2.0, bottom + height) #left,bottom -> right,top
             #bit 3, sub square at top/right corner
-            gl.glColor3f(*self._pulse_segment_color)
+            gl.glColor3f(*self._patch_color)
             gl.glRectf(left + width/2.0, bottom + height/2.0,left + width, bottom + height) #left,bottom -> right,top
         finally:
             gl.glEnable(gl.GL_LIGHTING)

@@ -126,7 +126,7 @@ class CheckerBoardScreen(Screen):
               check_color1 = 'white',
               check_color2 = 'black',
               screen_background_color = 'neutral-gray',
-              fixation_dot_color = False,
+              fixation_dot_color = None,
               pos_x = None, 
               pos_y = None,
               vsync_value = None,
@@ -164,8 +164,12 @@ class CheckerBoardScreen(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    CBS = Screen.with_pygame_display(debug = True)
-    CBS.setup(background_color = "neutral-gray",
+    NROWS = 64
+    CBS = CheckerBoardScreen.with_pygame_display(
+                                     #debug = True
+                                     )
+    CBS.setup(nrows = NROWS,
+              screen_background_color = "neutral-gray",
               vsync_value = 1
              )
-    CBS.run(duration = 5)
+    CBS.run(duration = 2)

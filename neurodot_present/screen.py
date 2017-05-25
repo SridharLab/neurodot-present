@@ -288,6 +288,7 @@ class Screen:
         self.start_time(t)
         self.start_rendering()
         #render the scene to the buffer
+        self.render()
         while is_running:
             t = time.time()
             dt = t - last_t
@@ -471,7 +472,8 @@ def run_stop_sequence(fixation_cross = None,
     #run sequence
     default_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
     default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    stop_SCR.run(duration = 0, vsync_value = 5, wait_on_user_escape = True)
+    stop_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)
+    stop_SCR.run(duration = 0, vsync_value = 0, wait_on_user_escape = True)
 
 ################################################################################
 # TEST CODE
