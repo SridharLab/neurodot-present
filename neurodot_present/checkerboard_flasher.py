@@ -96,7 +96,7 @@ class CheckerBoardFlasherScreen(Screen):
 # TEST CODE
 ################################################################################
 if __name__ == "__main__":
-    import sys
+    import sys, random, itertools
     
     #ensure that video mode is at the maxium FPS
     if sys.platform.startswith("linux"):
@@ -105,20 +105,37 @@ if __name__ == "__main__":
 
     import neurodot_present
     neurodot_present.settings['vsync_version'] = 2
-    CBFscreen = CheckerBoardFlasherScreen.with_pygame_display(
+    CBF1 = CheckerBoardFlasherScreen.with_pygame_display(
                                                               #display_mode = (512,512),
                                                               #debug = True
                                                              )
-    CBFscreen.setup(nrows = 64, 
-                    flash_rate = 20,
-                    )
-    CBFscreen.run(duration = 1.0, vsync_value = 0)
+    CBF1.setup(nrows = 128, 
+               flash_rate = 13,
+               )
+    CBF2 = CheckerBoardFlasherScreen.with_pygame_display(
+                                                              #display_mode = (512,512),
+                                                              #debug = True
+                                                             )
+    CBF2.setup(nrows = 128, 
+               flash_rate = 17,
+               )
+    CBF3 = CheckerBoardFlasherScreen.with_pygame_display(
+                                                              #display_mode = (512,512),
+                                                              #debug = True
+                                                             )
+    CBF3.setup(nrows = 128, 
+               flash_rate = 20,
+               )
+  
     #CBFscreen.run(duration = 5.0, vsync_value = 1)
     #CBFscreen.run(duration = 5.0, vsync_value = 2)
     #CBFscreen.run(duration = 5.0, vsync_value = 3)
     while True:
         for i in range(14):
-            CBFscreen.run(duration = 1.0, vsync_value = i)
+            CBFscreen = random.choice((CBF1,CBF2,CBF3))
+            CBFscreen.run(duration = 5.0, vsync_value = 1)
+            pause_duration = random.uniform(2.0,4.0)
+            CBFscreen.run(duration = pause_duration, vsync_value = 0)
    
 #    CBFscreen.run(duration = 5.0, vsync_value = 5)
 #    CBFscreen.run(duration = 5.0, vsync_value = 6)

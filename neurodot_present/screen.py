@@ -445,12 +445,13 @@ class Screen:
 def run_start_sequence(fixation_cross = None,
                        default_screen_color = "black",
                        start_screen_color = "green",
+                       background_color = "neutral-gray",
                        **kwargs):
     if fixation_cross is None:
         fixation_cross = FixationCross()
     #instantiate screens
     default_SCR = Screen.with_pygame_display(**kwargs)
-    default_SCR.setup(background_color = default_screen_color,fixation_cross = fixation_cross)
+    default_SCR.setup(background_color = background_color,fixation_cross = fixation_cross)
     start_SCR = Screen.with_pygame_display(**kwargs)
     start_SCR.setup(background_color = start_screen_color,fixation_cross = fixation_cross)
     #run sequence
@@ -463,10 +464,11 @@ def run_start_sequence(fixation_cross = None,
 def run_stop_sequence(fixation_cross = None, 
                       default_screen_color = "black",
                       stop_screen_color = "red",
+                      background_color = "neutral-gray",
                       **kwargs):
     #instantiate screens
     default_SCR = Screen.with_pygame_display(**kwargs)
-    default_SCR.setup(background_color = default_screen_color, fixation_cross = fixation_cross)
+    default_SCR.setup(background_color = background_color, fixation_cross = fixation_cross)
     stop_SCR   = Screen.with_pygame_display(**kwargs)
     stop_SCR.setup(background_color = stop_screen_color, fixation_cross = fixation_cross)
     #run sequence
