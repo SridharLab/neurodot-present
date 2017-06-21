@@ -49,7 +49,7 @@ class CheckerBoardFlasherScreen(Screen):
         self.nrows = nrows
         self.CB1 = CheckerBoard(nrows, check_width, color1 = check_color1, color2 = check_color2, fixation_dot_color = fixation_dot_color)
         self.CB2 = CheckerBoard(nrows, check_width, color1 = check_color2, color2 = check_color1, fixation_dot_color = fixation_dot_color) #reversed pattern
-        self.CB_cycle = itertools.cycle((self.CB1,self.CB2))
+        #self.CB_cycle = itertools.cycle((self.CB1,self.CB2))
 
         # set time-related attributes
         self._last_CB_change_time = None
@@ -63,8 +63,10 @@ class CheckerBoardFlasherScreen(Screen):
     def start_time(self,t):
         # get start time and set current CB objects (and their change times)
         Screen.start_time(self,t)
+        self._t0 = t
         self._last_CB_change_time = t
-        self._current_CB = self.CB_cycle.next()
+        self._current_CB = self.CB1
+        self._last_CB    = self.CB2
 
     def render(self):
         # do general OpenGL stuff 
@@ -85,12 +87,31 @@ class CheckerBoardFlasherScreen(Screen):
         # otherwise, only update a checkerboard if its flash_interval has elapsed
         if (t - self._last_CB_change_time) >= self.flash_interval:
             self._last_CB_change_time = t
-            self._current_CB = self.CB_cycle.next()
+            #swap the checkerboards
+            self._current_CB, self._last_CB = (self._last_CB, self._current_CB)
             self.ready_to_render = True
 
     def run(self, **kwargs):
         # loop rate set too high so it should run effectively as fast as python is capable of looping
         Screen.run(self, display_loop_rate = 10000, **kwargs)
+        
+################################################################################
+class CheckerBoardFlasherContrastSweepScreen(CheckerBoardFlasherScreen):
+    def setup(self, **kwargs):
+        CheckerBoardFlasherScreen.setup(self,**kwargs)
+        self.CB1.color1 = (1.0,0.0,0.0)
+        self.CB1.color2 = (0.0,1.0,0.0)
+        print("HERE")
+        
+    def update(self, t, dt):
+        c  = 0.1*(t-self._t0)/2.0
+        c1 = (0.5 + c, 0.5 + c, 0.5 + c)
+        c2 = (0.5 - c, 0.5 - c, 0.5 - c)
+        self.CB1.color1 = c1
+        self.CB1.color2 = c2
+        self.CB2.color1 = c2
+        self.CB2.color2 = c1
+        CheckerBoardFlasherScreen.update(self, t, dt)
 
 ################################################################################
 # TEST CODE
@@ -105,48 +126,14 @@ if __name__ == "__main__":
 
     import neurodot_present
     neurodot_present.settings['vsync_version'] = 2
-    CBF1 = CheckerBoardFlasherScreen.with_pygame_display(
-                                                              #display_mode = (512,512),
-                                                              #debug = True
+    CBFCS = CheckerBoardFlasherContrastSweepScreen.with_pygame_display(
+                                                              display_mode = (512,512),
+                                                              debug = True
                                                              )
-    CBF1.setup(nrows = 128, 
-               flash_rate = 13,
+    CBFCS.setup(nrows = 128, 
+                flash_rate = 13,
                )
-    CBF2 = CheckerBoardFlasherScreen.with_pygame_display(
-                                                              #display_mode = (512,512),
-                                                              #debug = True
-                                                             )
-    CBF2.setup(nrows = 128, 
-               flash_rate = 17,
-               )
-    CBF3 = CheckerBoardFlasherScreen.with_pygame_display(
-                                                              #display_mode = (512,512),
-                                                              #debug = True
-                                                             )
-    CBF3.setup(nrows = 128, 
-               flash_rate = 20,
-               )
-  
-    #CBFscreen.run(duration = 5.0, vsync_value = 1)
-    #CBFscreen.run(duration = 5.0, vsync_value = 2)
-    #CBFscreen.run(duration = 5.0, vsync_value = 3)
+    
     while True:
-        for i in range(14):
-            CBFscreen = random.choice((CBF1,CBF2,CBF3))
-            CBFscreen.run(duration = 5.0, vsync_value = 1)
-            pause_duration = random.uniform(2.0,4.0)
-            CBFscreen.run(duration = pause_duration, vsync_value = 0)
-   
-#    CBFscreen.run(duration = 5.0, vsync_value = 5)
-#    CBFscreen.run(duration = 5.0, vsync_value = 6)
-#    CBFscreen.run(duration = 5.0, vsync_value = 7)
-#    CBFscreen.run(duration = 5.0, vsync_value = 8)
-#    CBFscreen.run(duration = 5.0, vsync_value = 9)
-#    CBFscreen.run(duration = 5.0, vsync_value = 10)
-#    CBFscreen.run(duration = 5.0, vsync_value = 11)
-#    CBFscreen.run(duration = 5.0, vsync_value = 12)
-#    CBFscreen.run(duration = 5.0, vsync_value = 13)
-#    CBFscreen.run(duration = 5.0, vsync_value = 14)
-#    CBFscreen.run(duration = 5.0, vsync_value = 15)
-#    CBFscreen.run(duration = 5.0, vsync_value = 16)
-    #CBF.pygame_recording_loop(duration = 10.0, frame_rate = 2000, recording_name = "CBF")
+        CBFscreen = CBFCS#random.choice((CBF1,CBF2,CBF3))
+        CBFscreen.run(duration = 10.0, vsync_value = 1)

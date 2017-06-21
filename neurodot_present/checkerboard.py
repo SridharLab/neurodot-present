@@ -101,11 +101,11 @@ class CheckerBoard:
 
     def show_display_lists(self, color1, color2):
         # render the color1 list:
-        gl.glColor3f(*self.color1)
+        gl.glColor3f(*color1)
         gl.glCallList(self.display_list_multi)
 
         # render the colro2 list:
-        gl.glColor3f(*self.color2)
+        gl.glColor3f(*color2)
         gl.glCallList(self.display_list_multi + 1)
 
         # render fixation dot
