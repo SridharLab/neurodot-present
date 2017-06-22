@@ -96,17 +96,15 @@ class CheckerBoardFlasherScreen(Screen):
         Screen.run(self, display_loop_rate = 10000, **kwargs)
         
 ################################################################################
-class CheckerBoardFlasherContrastSweepScreen(CheckerBoardFlasherScreen):
-    def setup(self, **kwargs):
+class CheckerBoardFlasherColorFunctionScreen(CheckerBoardFlasherScreen):
+    def setup(self,
+              color_function,
+              **kwargs):
         CheckerBoardFlasherScreen.setup(self,**kwargs)
-        self.CB1.color1 = (1.0,0.0,0.0)
-        self.CB1.color2 = (0.0,1.0,0.0)
-        print("HERE")
+        self._color_function = color_function
         
     def update(self, t, dt):
-        c  = 0.1*(t-self._t0)/2.0
-        c1 = (0.5 + c, 0.5 + c, 0.5 + c)
-        c2 = (0.5 - c, 0.5 - c, 0.5 - c)
+        c1, c2 = self._color_function(t - self._t0)
         self.CB1.color1 = c1
         self.CB1.color2 = c2
         self.CB2.color1 = c2
@@ -126,14 +124,40 @@ if __name__ == "__main__":
 
     import neurodot_present
     neurodot_present.settings['vsync_version'] = 2
-    CBFCS = CheckerBoardFlasherContrastSweepScreen.with_pygame_display(
-                                                              display_mode = (512,512),
+
+    RAMP_DURATION = 10.0
+    DWELL_TIME    = 5.0
+
+    def contrast_ramp(duration, c_max = 1.0):
+        def cf(x):
+            y  = x/duration
+            y  = min(y,c_max)
+            y1 = 0.5*(1 + y)
+            y2 = 0.5*(1 - y)
+            c1 = (y1, y1, y1)
+            c2 = (y2, y2, y2)
+            return (c1, c2)
+        return cf
+
+    def brightness_ramp(duration, c_max = 1.0):
+        def cf(x):
+            c  = x/(duration)
+            c = min(c,c_max)
+            c1 = (c  , c , c )
+            c2 = (0.0,0.0,0.0)
+            return (c1, c2)
+        return cf
+
+    CBF = CheckerBoardFlasherColorFunctionScreen.with_pygame_display(
+                                                              display_mode = (1024,512),
                                                               debug = True
                                                              )
-    CBFCS.setup(nrows = 128, 
-                flash_rate = 13,
-               )
+    CBF.setup(nrows = 128,
+              flash_rate = 13,
+              screen_background_color = COLORS['black'],
+              color_function = contrast_ramp(RAMP_DURATION)
+              #color_function = brightness_ramp(RAMP_DURATION)
+              )
     
     while True:
-        CBFscreen = CBFCS#random.choice((CBF1,CBF2,CBF3))
-        CBFscreen.run(duration = 10.0, vsync_value = 1)
+        CBF.run(duration = RAMP_DURATION + DWELL_TIME, vsync_value = 1)
