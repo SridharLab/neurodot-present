@@ -147,17 +147,30 @@ if __name__ == "__main__":
             c2 = (0.0,0.0,0.0)
             return (c1, c2)
         return cf
+        
+    def exp_brightness_ramp(duration,
+                            e_min = -5.0,
+                            c_max = 1.0,
+                            b = 10.0,
+                            ):
+        def cf(x):
+            c  = b**(e_min*(1.0 - x/(duration)))
+            c = min(c,c_max)
+            c1 = (c  , c , c )
+            c2 = (0.0,0.0,0.0)
+            return (c1, c2)
+        return cf
 
     CBF = CheckerBoardFlasherColorFunctionScreen.with_pygame_display(
                                                               display_mode = (1024,512),
                                                               debug = True
                                                              )
-    CBF.setup(nrows = 128,
+    CBF.setup(color_function = exp_brightness_ramp(RAMP_DURATION),
+              #color_function = contrast_ramp(RAMP_DURATION),
+              nrows = 128,
               flash_rate = 13,
               screen_background_color = COLORS['black'],
-              color_function = contrast_ramp(RAMP_DURATION)
-              #color_function = brightness_ramp(RAMP_DURATION)
               )
     
     while True:
-        CBF.run(duration = RAMP_DURATION + DWELL_TIME, vsync_value = 1)
+        CBF.run(duration = RAMP_DURATION, vsync_value = 1)

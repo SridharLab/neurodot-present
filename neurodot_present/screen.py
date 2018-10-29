@@ -278,7 +278,7 @@ class Screen:
         #error check any passed vsync_values
         if not vsync_value is None:
             vsync_value = int(vsync_value)
-            assert( 0 <= vsync_value <= 16)
+            assert( 0 <= vsync_value <= 18)
             self.vsync_value = vsync_value
 
         clock = pygame.time.Clock()
@@ -455,10 +455,10 @@ def run_start_sequence(fixation_cross = None,
     start_SCR = Screen.with_pygame_display(**kwargs)
     start_SCR.setup(background_color = start_screen_color,fixation_cross = fixation_cross)
     #run sequence
+    default_SCR.run(duration = 2.0, vsync_value = 0, mask_user_escape = True)
+    start_SCR.run(duration = 2.0, vsync_value = 17, mask_user_escape = True)  #begins the start frame
     default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    start_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)  #begins the start frame
-    default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    default_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)  #starts the recording
+    default_SCR.run(duration = 1, vsync_value = 1, mask_user_escape = True)  #starts the recording
     default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
 
 def run_stop_sequence(fixation_cross = None, 
@@ -472,9 +472,10 @@ def run_stop_sequence(fixation_cross = None,
     stop_SCR   = Screen.with_pygame_display(**kwargs)
     stop_SCR.setup(background_color = stop_screen_color, fixation_cross = fixation_cross)
     #run sequence
-    default_SCR.run(duration = 1, vsync_value = 13, mask_user_escape = True)
+    default_SCR.run(duration = 2.0, vsync_value = 0, mask_user_escape = True)
+    default_SCR.run(duration = 2.0, vsync_value = 17, mask_user_escape = True)
     default_SCR.run(duration = 1, vsync_value = 0, mask_user_escape = True)
-    stop_SCR.run(duration = 1, vsync_value = 5, mask_user_escape = True)
+    stop_SCR.run(duration = 1, vsync_value = 2, mask_user_escape = True)
     stop_SCR.run(duration = 0, vsync_value = 0, wait_on_user_escape = True)
 
 ################################################################################
